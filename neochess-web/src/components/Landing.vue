@@ -1,8 +1,7 @@
 <template>
 <div id="neochess-landing">
-	<p id="neochess-title">neochess</p>
+	<p class="neochess-title">neochess</p>
 	<button @click="new_game(username)">start a game</button>
-	<p v-if="game_id !== null">game id: {{ game_id }}</p>
 </div>
 </template>
 
@@ -14,31 +13,30 @@ export default {
 	},
 	data() {
 		return {
-			username: null,
-			game_id: null
+			username: null
 		}
 	},
 	methods: {
 		async new_game(username) {
 			try {
-				const new_game = `${process.env.VUE_APP_NEOCHESS_SERVER_URL}/new-game`;
+				const new_game = `${process.env.VUE_APP_SERVER_URL}/new-game`;
 				const response = await fetch(new_game, {
 					method: 'POST',
 					body: JSON.stringify({username}),
 					headers: { 'Content-type': 'application/json; charset=UTF-8' },
 				})
-				const data = await response.json()
-				this.game_id = data.game_id;
+				const data = await response.json();
+				this.go_to_new_game(data.game_id);
 			} catch (error) {
-				console.error(error)
+				console.error(error);
 			}
+		},
+		go_to_new_game(game_id) {
+			this.$router.push({ name: 'game', params: { game_id }});
 		}
 	}
 }
 </script>
 
 <style scoped>
-#neochess-title {
-	font-weight: bold;
-}
 </style>

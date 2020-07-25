@@ -10,6 +10,9 @@
   "dependencies": {
     "core-js": "^3.6.5",
     "vue": "^2.6.11",
+    "vue-chessboard": "^0.6.7",
+    "vue-draggable-resizable": "^2.2.0",
+    "vue-grid-responsive": "^0.1.1",
     "vue-router": "^3.3.4"
   },
   "devDependencies": {

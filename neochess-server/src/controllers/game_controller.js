@@ -40,7 +40,7 @@ const new_game = async (req, res) => {
 			message: `new game ${log.dict2log(loginfo)}`
 		});
 
-		const game_id = '109287jhakshaoisu98723163723gi';
+		const game_id = 'test_game';
 
 		/* return the status */
 		return status.OK(res, {game_id});

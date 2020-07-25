@@ -88,4 +88,11 @@ body {
 .align-left {
 	text-align: left;
 }
+.neochess-title {
+	font-weight: bold;
+}
+.center {
+  margin: auto;
+  width: 50%;
+}
 </style>
