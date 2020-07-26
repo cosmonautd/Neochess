@@ -2,7 +2,7 @@
 <div id="neochess-game">
 	<p class="neochess-title">game!</p>
 	<p>share this link with a friend to start playing: {{ game_url }}</p>
-	<NeoBoard size="600"/>
+	<NeoBoard size="700"/>
 </div>
 </template>
 

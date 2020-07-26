@@ -4,10 +4,12 @@
 		<div v-for="file in board" :key="file.id">
 			<div v-for="rank in file.ranks" :key="rank.square" class="rank">
 				<Drop v-if="rank.piece" :class="`drop ${rank.type}`" drop-effect="move"
+					:style="{width: piece_size + 'px', height: piece_size + 'px'}"
 					@drop="(data, e) => move({...data, ...{square: rank.square}})">
 					<NeoPiece :id="rank.piece" :start_position="rank.square" :size="piece_size"/>
 				</Drop>
 				<Drop v-else  :class="`drop ${rank.type}`" drop-effect="move"
+					:style="{width: piece_size + 'px', height: piece_size + 'px'}"
 					@drop="(data, e) => move({...data, ...{square: rank.square}})">
 					<div :style="{width: piece_size + 'px', height: piece_size + 'px'}"/>
 				</Drop>

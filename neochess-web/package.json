@@ -9,10 +9,10 @@
   },
   "dependencies": {
     "core-js": "^3.6.5",
+    "jquery": "^3.5.1",
     "vue": "^2.6.11",
     "vue-chessboard": "^0.6.7",
     "vue-drag-drop": "^1.1.4",
-    "vue-grid-responsive": "^0.1.1",
     "vue-router": "^3.3.4"
   },
   "devDependencies": {
