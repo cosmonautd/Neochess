@@ -5,7 +5,7 @@
 </template>
 
 <script>
-import {chessboard} from './vue-chessboard'
+import {chessboard} from 'vue-chessboard'
 export default {
 	name: "neochess-board",
 	components: {

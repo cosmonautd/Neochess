@@ -6,7 +6,7 @@
 </template>
 
 <script>
-import VueScreenSize from 'vue-screen-size'
+
 export default {
 	name: "neochess-landing",
 	props: {
@@ -32,18 +32,11 @@ export default {
 				console.error(error);
 			}
 		},
-		compute_board_size() {
-			const w = this.$vssWidth;
-			const h = this.$vssHeight;
-			const size = w < h ? 0.9*w : 0.8*h;
-			return size.toString();
-		},
 		go_to_new_game(game_id) {
-			const board_size = this.compute_board_size();
-			this.$router.push({ name: 'game', params: { game_id, board_size }});
+			this.$router.push({ name: 'game', params: { game_id }});
 		}
 	},
-	mixins: [VueScreenSize.VueScreenSizeMixin],
+	
 }
 </script>
 
