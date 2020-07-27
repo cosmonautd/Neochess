@@ -15,8 +15,10 @@
     "http-errors": "~1.6.3",
     "jsonwebtoken": "^8.5.1",
     "lodash": "^4.17.19",
+    "mongodb": "^3.5.9",
     "morgan": "~1.9.1",
     "nodemon": "^2.0.4",
+    "randomstring": "^1.1.5",
     "winston": "^3.3.3"
   }
 }

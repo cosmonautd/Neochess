@@ -78,7 +78,7 @@ body {
 	background-color: #1D1D1D;
 }
 #app {
-	margin-top: 2em;
+	margin-top: 1em;
 	display: block;
 	text-align: center;
 	font-family: Helvetica, Arial, sans-serif;

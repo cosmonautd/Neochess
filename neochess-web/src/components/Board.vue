@@ -1,11 +1,16 @@
 <template>
 <div id="neochess-board">
-	<chessboard ref="chessboard" :style="css_vars" id="board"/>
+	<chessboard
+		ref="chessboard"
+		:style="css_vars" id="board"
+		:orientation="orientation"
+		:fixedColor="orientation"
+	/>
 </div>
 </template>
 
 <script>
-import {chessboard} from 'vue-chessboard'
+import {chessboard} from './vue-chessboard'
 export default {
 	name: "neochess-board",
 	components: {
@@ -15,6 +20,10 @@ export default {
 		size: {
 			type: String,
 			default: '700'
+		},
+		orientation: {
+			type: String,
+			required: true
 		}
 	},
 	computed: {
