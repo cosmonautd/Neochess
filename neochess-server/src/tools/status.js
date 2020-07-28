@@ -36,7 +36,6 @@ const err = (code, info) => {
 }
 
 const respond = (res, status, output) => {
-	res.status = status;
 	let body = {};
 	if (output.data) body = { ...body, ...output.data };
 	if (output.error) {
@@ -46,11 +45,11 @@ const respond = (res, status, output) => {
 		}
 		if(output.error.info) body.error.info = output.error.info;
 	}
-	if (res.status.toString()[0] == '2')
+	if (status.toString()[0] == '2')
 		body.success = true;
 	else body.success = false;
-	body.status = res.status;
-	return res.json(body);
+	body.status = status;
+	return res.status(status).json(body);
 }
 
 const OK = (res, data) => {

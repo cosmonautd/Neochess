@@ -17,15 +17,16 @@ export default {
 		}
 	},
 	methods: {
-		async new_game() {
-			try {
-				const new_game = `${process.env.VUE_APP_SERVER_URL}/new-game`;
-				const response = await this.axios.post(new_game, {});
+		new_game() {
+			const newgame_url = `${process.env.VUE_APP_SERVER_URL}/new-game`;
+			this.axios.post(newgame_url, {})
+			.then(response => {
 				const data = response.data;
 				this.go_to_new_game(data.game);
-			} catch (error) {
-				console.error(error);
-			}
+			})
+			.catch(error => {
+				console.log(error);
+			});
 		},
 		go_to_new_game(game) {
 			this.$store.commit('update_username', game.params.username);

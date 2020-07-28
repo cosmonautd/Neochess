@@ -1,57 +1,46 @@
-<template>
-<div id="neochess-board">
-	<chessboard
-		ref="chessboard"
-		:style="css_vars" id="board"
-		:orientation="orientation"
-		:fixedColor="orientation"
-	/>
-</div>
-</template>
-
 <script>
 import {chessboard} from './vue-chessboard'
 export default {
 	name: "neochess-board",
-	components: {
-		chessboard
-	},
-	props: {
-		size: {
-			type: String,
-			default: '700'
-		},
-		orientation: {
-			type: String,
-			required: true
-		}
-	},
-	computed: {
-		css_vars() {
-			return {
-				'--size': this.size + 'px'
-			}
-		}
-	},
-	data() {
-		return {
-			game_id: this.$route.params.game_id
-		}
-	},
+	extends: chessboard,
 	methods: {
-		loading() {
-		}
+		userPlay() {
+			return (orig, dest) => {
+				if (this.isPromotion(orig, dest)) {
+					this.promoteTo = this.onPromotion()
+				}
+				this.game.move({from: orig, to: dest, promotion: this.promoteTo})
+				this.board.set({
+					fen: this.game.fen()
+				})
+				this.calculatePromotions()
+				this.aiNextMove()
+			};
+		},
+		aiNextMove() {
+			let moves = this.game.moves({verbose: true})
+			let randomMove = moves[Math.floor(Math.random() * moves.length)]
+			this.game.move(randomMove)
+
+			this.board.set({
+				fen: this.game.fen(),
+				turnColor: this.toColor(),
+				movable: {
+					color: this.toColor(),
+					dests: this.possibleMoves(),
+					events: { after: this.userPlay()},
+				}
+			});
+		},
 	},
 	mounted() {
-		this.loading();
+		if (this.player == 'white') {
+			this.board.set({
+				movable: { events: { after: this.userPlay()} },
+			})
+		} else {
+			this.aiNextMove()
+		}
 	}
 }
 </script>
-
-<style>
-.cg-board-wrap {
-	width: var(--size);
-	height: var(--size);
-	margin: auto;
-}
-</style>

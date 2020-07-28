@@ -8,6 +8,7 @@
 			class='spacing-top'
 			:size="board_size"
 			:orientation="orientation"
+			:player="orientation"
 		/>
 	</div>
 	<div v-else-if="status === 'loading'">
@@ -51,7 +52,13 @@ export default {
 		},
 		orientation() {
 			return this.$store.state.game.params.orientation;
-		}
+		},
+		css_vars() {
+			return {
+				'width': this.board_size + 'px',
+				'height': this.board_size + 'px'
+			}
+		},
 	},
 	methods: {
 		load() {
@@ -66,30 +73,32 @@ export default {
 			const size = w < h ? 0.9*w : 0.8*h;
 			return size.toString();
 		},
-		refresh: function refresh(event) {
+		refresh(event) {
 			event.preventDefault();
 			event.returnValue = "";
-		}
-	},
-	async beforeCreate() {
-		if (!this.$store.state.game) {
-			const join_game = `${process.env.VUE_APP_SERVER_URL}/join-game`;
-			const response = await this.axios.post(join_game, {
-				game_id: this.$route.params.game_id
-			});
-			const data = response.data;
-			if (data.success) {
-				this.$store.commit('update_game', data.game);
-				this.$store.commit('update_username', data.game.params.username);
+		},
+		join_game() {
+			if (!this.$store.state.game) {
+				const join_url = `${process.env.VUE_APP_SERVER_URL}/join-game`;
+				this.axios.post(join_url, {game_id: this.$route.params.game_id})
+				.then(response => {
+					const data = response.data;
+					this.$store.commit('update_game', data.game);
+					this.$store.commit('update_username', data.game.params.username);
+					this.load();
+				})
+				.catch(error => {
+					const data = error.response.data;
+					this.status = data.error.code;
+					this.status_message = data.error.message;
+				});
 			} else {
-				this.status = data.error.code;
-				this.status_message = data.error.message
+				this.load();
 			}
 		}
-		this.load();
 	},
-	mounted() {
-		this.load();
+	created() {
+		this.join_game();
 	},
 	mixins: [VueScreenSize.VueScreenSizeMixin],
 }
