@@ -113,42 +113,7 @@ const join_game = async (req, res) => {
 		const game_collection = mongo_client.db('neochessdb').collection('games_test');
 		let game = await game_collection.findOne({_id: new ObjectId(game_id)});
 
-		let params;
-
-		if (!game.white_username || !game.black_username) {
-
-			const username = utils.random_username();
-			const orientation = game.white_username ? 'black' : 'white';
-
-			let update;
-			if (orientation === 'white') update = {white_username: username}
-			else if (orientation === 'black') update = {black_username: username}
-
-			const result = await game_collection.findOneAndUpdate(
-				{_id: new ObjectId(game_id)},
-				{$set: update},
-				{returnOriginal: false}
-			);
-
-			game = result.value
-
-			/* generate game parameters */
-			params = {
-				game_id: game._id,
-				orientation,
-				username
-			}
-
-			/* log the event */
-			const loginfo = {game};
-			logger.log({
-				level: 'info',
-				message: `join game ${log.dict2log(loginfo)}`
-			});
-
-		} else {
-
-			params = {};
+		if (game.white_username && game.black_username) {
 
 			/* log the event */
 			const loginfo = {game};
@@ -156,14 +121,45 @@ const join_game = async (req, res) => {
 				level: 'info',
 				message: `join game attempt failed ${log.dict2log(loginfo)}`
 			});
+
+			/* return error */
+			throw status.Exception('COULD_NOT_JOIN');
 		}
+
+		const username = utils.random_username();
+		const orientation = game.white_username ? 'black' : 'white';
+
+		let update;
+		if (orientation === 'white') update = {white_username: username}
+		else if (orientation === 'black') update = {black_username: username}
+
+		const result = await game_collection.findOneAndUpdate(
+			{_id: new ObjectId(game_id)},
+			{$set: update},
+			{returnOriginal: false}
+		);
+
+		game = result.value
+
+		/* generate game parameters */
+		const params = {
+			game_id: game._id,
+			orientation,
+			username
+		}
+
+		/* log the event */
+		const loginfo = {game};
+		logger.log({
+			level: 'info',
+			message: `join game ${log.dict2log(loginfo)}`
+		});
 
 		/* return the game */
 		return status.OK(res, {game: {params}});
 
 	} catch (error) {
 
-		console.log(error);
 		return status.Error(res, error);
 
 	} finally {

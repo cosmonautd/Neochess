@@ -57,7 +57,7 @@ export default {
 		load() {
 			this.defined_board_size = this.compute_board_size();
 			this.neochess_game += 1;
-			if (this.$store.state.username) this.status = 'success';
+			if (this.$store.state.game) this.status = 'success';
 			else this.status = 'failed';
 		},
 		compute_board_size() {
@@ -73,25 +73,20 @@ export default {
 	},
 	async beforeCreate() {
 		if (!this.$store.state.game) {
-			try {
-				const join_game = `${process.env.VUE_APP_SERVER_URL}/join-game`;
-				const response = await fetch(join_game, {
-					method: 'POST',
-					body: JSON.stringify({game_id: this.$route.params.game_id}),
-					headers: { 'Content-type': 'application/json; charset=UTF-8' },
-				})
-				const data = await response.json();
-				this.$store.commit('update_username', data.game.params.username);
+			const join_game = `${process.env.VUE_APP_SERVER_URL}/join-game`;
+			const response = await this.axios.post(join_game, {
+				game_id: this.$route.params.game_id
+			});
+			const data = response.data;
+			if (data.success) {
 				this.$store.commit('update_game', data.game);
-				if (!this.$store.state.username) {
-					this.status = 'failed';
-					this.status_message = 'could not join'
-				}
-				this.load();
-			} catch (error) {
-				console.error(error);
+				this.$store.commit('update_username', data.game.params.username);
+			} else {
+				this.status = data.error.code;
+				this.status_message = data.error.message
 			}
 		}
+		this.load();
 	},
 	mounted() {
 		this.load();

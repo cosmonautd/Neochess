@@ -19,6 +19,7 @@
     "morgan": "~1.9.1",
     "nodemon": "^2.0.4",
     "randomstring": "^1.1.5",
+    "socket.io": "^2.3.0",
     "winston": "^3.3.3"
   }
 }

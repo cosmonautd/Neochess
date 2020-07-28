@@ -20,12 +20,8 @@ export default {
 		async new_game() {
 			try {
 				const new_game = `${process.env.VUE_APP_SERVER_URL}/new-game`;
-				const response = await fetch(new_game, {
-					method: 'POST',
-					body: JSON.stringify({}),
-					headers: { 'Content-type': 'application/json; charset=UTF-8' },
-				})
-				const data = await response.json();
+				const response = await this.axios.post(new_game, {});
+				const data = response.data;
 				this.go_to_new_game(data.game);
 			} catch (error) {
 				console.error(error);

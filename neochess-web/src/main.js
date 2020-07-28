@@ -1,6 +1,10 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 import createPersistedState from 'vuex-persistedstate'
+import VueSocketIO from 'vue-socket.io'
+import axios from 'axios'
+import VueAxios from 'vue-axios'
+
 import App from './App.vue'
 import router from './router'
 
@@ -24,7 +28,20 @@ const store = new Vuex.Store({
 	plugins: [
 		createPersistedState({storage: window.sessionStorage})
 	]
-})
+});
+
+Vue.use(new VueSocketIO({
+	debug: true,
+	connection: 'http://localhost:8085',
+	vuex: {
+		store,
+		actionPrefix: 'SOCKET_',
+		mutationPrefix: 'SOCKET_'
+	},
+	// options: { path: "/my-app/" }
+}));
+
+Vue.use(VueAxios, axios)
 
 new Vue({
 	router,
