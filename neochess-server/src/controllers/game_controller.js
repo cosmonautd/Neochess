@@ -2,7 +2,7 @@
 const _ = require('lodash');
 const check = require('express-validator');
 const randomstring = require("randomstring");
-const {MongoClient} = require('mongodb');
+const {MongoClient, ObjectId} = require('mongodb');
 
 /* internal dependencies */
 const log = require('../tools/log');
@@ -20,12 +20,17 @@ const validate = (method) => {
 		case 'new_game': {
 			return []
 		}
+
+		case 'join_game': {
+			return []
+		}
 	}
 }
 
 /* start a new game */
 const new_game = async (req, res) => {
 
+	/* mongodb instance */
 	const mongo_client = new MongoClient(process.env.NEOCHESS_DB_URI, {
 		useUnifiedTopology: true
 	});
@@ -83,7 +88,92 @@ const new_game = async (req, res) => {
 	}
 }
 
+/* join a new game */
+const join_game = async (req, res) => {
+
+	/* mongodb instance */
+	const mongo_client = new MongoClient(process.env.NEOCHESS_DB_URI, {
+		useUnifiedTopology: true
+	});
+
+	try {
+
+		/* validate inputs */
+		const v_result = check.validationResult(req);
+		if (utils.invalid(v_result))
+			throw status.Exception('INPUT_ERROR', v_result.array());
+
+		/* extract inputs */
+		const {game_id} = req.body;
+
+		/* connect to mongo db */
+		await mongo_client.connect();
+
+		/* search for the game using game_id */
+		const game_collection = mongo_client.db('neochessdb').collection('games_test');
+		let game = await game_collection.findOne({_id: new ObjectId(game_id)});
+
+		let params;
+
+		if (!game.white_username || !game.black_username) {
+
+			const username = utils.random_username();
+			const orientation = game.white_username ? 'black' : 'white';
+
+			let update;
+			if (orientation === 'white') update = {white_username: username}
+			else if (orientation === 'black') update = {black_username: username}
+
+			const result = await game_collection.findOneAndUpdate(
+				{_id: new ObjectId(game_id)},
+				{$set: update},
+				{returnOriginal: false}
+			);
+
+			game = result.value
+
+			/* generate game parameters */
+			params = {
+				game_id: game._id,
+				orientation,
+				username
+			}
+
+			/* log the event */
+			const loginfo = {game};
+			logger.log({
+				level: 'info',
+				message: `join game ${log.dict2log(loginfo)}`
+			});
+
+		} else {
+
+			params = {};
+
+			/* log the event */
+			const loginfo = {game};
+			logger.log({
+				level: 'info',
+				message: `join game attempt failed ${log.dict2log(loginfo)}`
+			});
+		}
+
+		/* return the game */
+		return status.OK(res, {game: {params}});
+
+	} catch (error) {
+
+		console.log(error);
+		return status.Error(res, error);
+
+	} finally {
+
+		await mongo_client.close();
+	}
+}
+
 module.exports = {
 	validate,
-	new_game
+	new_game,
+	join_game
 };
