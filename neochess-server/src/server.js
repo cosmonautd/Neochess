@@ -68,7 +68,8 @@ io.on('connection', (socket) => {
 			const game = {
 				white_username: orientation === 'white' ? utils.random_username() : null,
 				black_username: orientation === 'black' ? utils.random_username() : null,
-				fen: null
+				fen: null,
+				lastMove: null
 			}
 
 			/* connect to mongo db */
@@ -82,7 +83,9 @@ io.on('connection', (socket) => {
 			const params = {
 				game_id: result.insertedId,
 				orientation,
-				username: orientation === 'black' ? game.black_username : game.white_username
+				username: orientation === 'black' ? game.black_username : game.white_username,
+				fen: null,
+				lastMove: null
 			}
 
 			/* log the event */
@@ -169,7 +172,9 @@ io.on('connection', (socket) => {
 			const params = {
 				game_id: game._id,
 				orientation,
-				username
+				username,
+				fen: game.fen,
+				lastMove: game.lastMove
 			}
 
 			/* log the event */
@@ -204,16 +209,59 @@ io.on('connection', (socket) => {
 		}
 	});
 
-	socket.on('move', (data) => {
-		const logdata = {
-			username: data.username, game_id: data.game_id,
-			move: data.move
-		}
-		logger.log({
-			level: 'info',
-			message: `new move ${log.dict2log(logdata)}`
+	socket.on('move', async (data) => {
+
+		/* mongodb instance */
+		const mongo_client = new MongoClient(process.env.NEOCHESS_DB_URI, {
+			useUnifiedTopology: true
 		});
-		io.to(data.game_id).emit('move', data);
+
+		try {
+
+			const { game_id, fen, move } = data;
+
+			/* connect to mongo db */
+			await mongo_client.connect();
+
+			/* search for the game using game_id */
+			const game_collection = mongo_client.db('neochessdb').collection('games_test');
+
+			const update = { fen, lastMove: move };
+
+			/* Update the game */
+			const result = await game_collection.findOneAndUpdate(
+				{_id: new ObjectId(game_id)},
+				{$set: update},
+				{returnOriginal: false}
+			);
+
+			const game = result.value;
+
+			const logdata = {
+				username: data.username, game_id: data.game_id,
+				move: data.move
+			}
+			logger.log({
+				level: 'info',
+				message: `new move ${log.dict2log(logdata)}`
+			});
+
+			io.to(game_id).emit('move', data);
+
+		} catch (error) {
+
+			console.log(error);
+			socket.emit('newGame', {
+				error: {
+					code: 'INTERNAL_SERVER_ERROR',
+					message: 'internal server error'
+				}
+			});
+
+		} finally {
+
+			await mongo_client.close();
+		}
 	});
 });
 

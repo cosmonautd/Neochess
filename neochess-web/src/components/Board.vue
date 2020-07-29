@@ -72,6 +72,25 @@ export default {
 				movable: { events: { after: this.playerMove()} },
 			})
 		}
+		if (this.player == 'black') {
+			if (this.$store.state.game.params.fen) {
+				this.game.move(this.$store.state.game.params.lastMove);
+				this.board.set({
+					fen: this.$store.state.game.params.fen,
+					turnColor: this.toColor(),
+					check: this.findCheckSquare(),
+					movable: {
+						color: this.player,
+						dests: this.possibleMoves(),
+						events: { after: this.playerMove()},
+					},
+					lastMove: [
+						this.$store.state.game.params.lastMove.from,
+						this.$store.state.game.params.lastMove.to
+					]
+				})
+			}
+		}
 	}
 }
 </script>
