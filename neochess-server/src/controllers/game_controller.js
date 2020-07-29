@@ -51,6 +51,7 @@ const new_game = async (req, res) => {
 		const game = {
 			white_username: orientation === 'white' ? utils.random_username() : null,
 			black_username: orientation === 'black' ? utils.random_username() : null,
+			fen: null
 		}
 
 		/* connect to mongo db */

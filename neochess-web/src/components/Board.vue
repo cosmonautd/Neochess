@@ -4,7 +4,7 @@ export default {
 	name: "neochess-board",
 	extends: chessboard,
 	methods: {
-		userPlay() {
+		playerMove() {
 			return (orig, dest) => {
 				if (this.isPromotion(orig, dest)) {
 					this.promoteTo = this.onPromotion()
@@ -14,32 +14,38 @@ export default {
 					fen: this.game.fen()
 				})
 				this.calculatePromotions()
-				this.aiNextMove()
+				const data = {
+					username: this.$store.state.username,
+					game_id: this.$store.state.game.params.game_id,
+					move: {from: orig, to: dest, promotion: this.promoteTo},
+					fen: this.game.fen()
+				};
+				this.$socket.emit('move', data);
 			};
 		},
-		aiNextMove() {
-			let moves = this.game.moves({verbose: true})
-			let randomMove = moves[Math.floor(Math.random() * moves.length)]
-			this.game.move(randomMove)
-
-			this.board.set({
-				fen: this.game.fen(),
-				turnColor: this.toColor(),
-				movable: {
-					color: this.toColor(),
-					dests: this.possibleMoves(),
-					events: { after: this.userPlay()},
-				}
-			});
-		},
+	},
+	sockets: {
+		listener: {
+			move: function (data) {
+				this.game.move(data.move);
+				this.board.set({
+					fen: data.fen,
+					turnColor: this.toColor(),
+					movable: {
+						color: this.player,
+						dests: this.possibleMoves(),
+						events: { after: this.playerMove()},
+					},
+					lastMove: [data.move.from, data.move.to]
+				});
+			}
+		}
 	},
 	mounted() {
 		if (this.player == 'white') {
 			this.board.set({
-				movable: { events: { after: this.userPlay()} },
+				movable: { events: { after: this.playerMove()} },
 			})
-		} else {
-			this.aiNextMove()
 		}
 	}
 }
