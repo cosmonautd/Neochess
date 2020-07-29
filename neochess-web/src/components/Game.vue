@@ -77,26 +77,7 @@ export default {
 			event.preventDefault();
 			event.returnValue = "";
 		},
-		// join_game() {
-		// 	if (!this.$store.state.game) {
-		// 		const join_url = `${process.env.VUE_APP_SERVER_URL}/join-game`;
-		// 		this.axios.post(join_url, {game_id: this.$route.params.game_id})
-		// 		.then(response => {
-		// 			const data = response.data;
-		// 			this.$store.commit('update_game', data.game);
-		// 			this.$store.commit('update_username', data.game.params.username);
-		// 			this.load();
-		// 		})
-		// 		.catch(error => {
-		// 			const data = error.response.data;
-		// 			this.status = data.error.code;
-		// 			this.status_message = data.error.message;
-		// 		});
-		// 	} else {
-		// 		this.load();
-		// 	}
-		// },
-		join_game_socket_io() {
+		join_game() {
 			if (!this.$store.state.game) {
 				this.$socket.emit('joinGame', {game_id: this.$route.params.game_id});
 			} else {
@@ -119,7 +100,7 @@ export default {
 		}
 	},
 	created() {
-		this.join_game_socket_io();
+		this.join_game();
 	},
 	mixins: [VueScreenSize.VueScreenSizeMixin],
 }
