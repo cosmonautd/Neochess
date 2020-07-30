@@ -6,6 +6,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const {MongoClient, ObjectId} = require('mongodb');
+const _ = require('lodash');
 
 /* configure express and socket.io */
 const app = express();
@@ -32,169 +33,252 @@ app.use(routes);
 const port = process.env.NEOCHESS_SERVER_URL.split(':')[2]
 
 /* */
-const players = {};
+let users = {};
+let sockets = {};
+let games = {};
 io.on('connection', (socket) => {
 
-	logger.log({
-		level: 'info',
-		message: `new user`
-	});
+	socket.on('username', function (data) {
 
-	socket.join(socket.id);
+		try {
+
+			if (!data.username) {
+
+				/* Generate username */
+				const username = utils.random_username();
+	
+				/* New user joins a private room and the username is emitted back */
+				socket.join(username+socket.id);
+				socket.emit('username', {username});
+	
+				/* Save user in memory */
+				users[socket.id] = username;
+				sockets[username] = socket.id;
+	
+				/* Event is logged */
+				logger.log({
+					level: 'info',
+					message: `User connected: ${username}`
+				});
+	
+			} else {
+	
+				/* Set username */
+				const username = data.username;
+	
+				/* User joins a private room again */
+				socket.join(username+socket.id);
+	
+				/* Update user in memory */
+				users[socket.id] = username;
+				sockets[username] = socket.id;
+
+				/* Reconnects the user to the game */
+				if (games[username]) {
+					const gameId = games[username];
+					socket.join(gameId);
+				}
+	
+				/* Event is logged */
+				logger.log({
+					level: 'info',
+					message: `User reconnected: ${username}`
+				});
+			}
+
+		} catch (error) {
+
+			console.log(error);
+		}
+	});
 
 	socket.on('disconnect', function (reason) {
 
-		logger.log({
-			level: 'info',
-			message: `disconnected user`
-		});
+		try {
 
-		socket.leave(socket.id);
+			/* Remove user from memory */
+			const username = users[socket.id];
+			delete users[socket.id];
+			delete sockets[username];
 
+			/* User leaves all rooms */
+			socket.leaveAll();
+
+			/* Log the event */
+			logger.log({
+				level: 'info',
+				message: `User disconnected: ${username}`
+			});
+
+		} catch (error) {
+
+			console.log(error);
+		}
 	});
 
 	socket.on('newGame', async (data) => {
 		
-		/* mongodb instance */
-		const mongo_client = new MongoClient(process.env.NEOCHESS_DB_URI, {
+		/* MongoDB instance */
+		const mongo = new MongoClient(process.env.NEOCHESS_DB_URI, {
 			useUnifiedTopology: true
 		});
 
 		try {
 
-			/* define a game */
+			/* Define a game */
 			const random = Math.random();
 			const orientation = random < 0.5 ? 'white' : 'black';
+			const username = users[socket.id];
 			const game = {
-				white_username: orientation === 'white' ? utils.random_username() : null,
-				black_username: orientation === 'black' ? utils.random_username() : null,
+				whiteUsername: orientation === 'white' ? username : null,
+				blackUsername: orientation === 'black' ? username : null,
 				fen: null,
 				lastMove: null
 			}
 
-			/* connect to mongo db */
-			await mongo_client.connect();
+			/* Connect to MongoDB */
+			await mongo.connect();
 
-			/* create a game */
-			const game_collection = mongo_client.db('neochessdb').collection('games_test');
-			const result = await game_collection.insertOne(game);
+			/* Create a game */
+			const gameCollection = mongo.db('neochessdb').collection('games_test');
+			const result = await gameCollection.insertOne(game);
 
-			/* generate game parameters */
+			/* Generate game parameters */
 			const params = {
-				game_id: result.insertedId,
+				gameId: result.insertedId,
 				orientation,
-				username: orientation === 'black' ? game.black_username : game.white_username,
+				username,
 				fen: null,
 				lastMove: null
-			}
+			};
 
-			/* log the event */
+			/* User joins the game room */
+			socket.join(params.gameId);
+			games[username] = params.gameId;
+
+			/* Game parameters are emitted to the user */
+			io.to(params.gameId).emit('gameCreated', {game: {params}});
+
+			/* Log the event */
 			const loginfo = {game};
 			logger.log({
 				level: 'info',
-				message: `new game ${log.dict2log(loginfo)}`
+				message: `New game ${log.dict2log(loginfo)}`
 			});
 
-			socket.join(params.game_id);
-
-			/* return the game */
-			io.to(socket.id).emit('newGame', {game: {params}});
-
+			/* Just to be safe, return */
 			return;
 
 		} catch (error) {
 
+			/* Log the error, emit error */
 			console.log(error);
-			socket.emit('newGame', {});
+			socket.emit('gameCreated', {
+				error: {
+					code: 'INTERNAL_SERVER_ERROR',
+					message: 'internal server error'
+				}
+			});
 
 			return;
 
 		} finally {
 
-			await mongo_client.close();
+			/* Close MongoDB instance */
+			await mongo.close();
 		}
 	});
 
 	socket.on('joinGame', async (data) => {
 
-		/* mongodb instance */
-		const mongo_client = new MongoClient(process.env.NEOCHESS_DB_URI, {
+		/* MongoDB instance */
+		const mongo = new MongoClient(process.env.NEOCHESS_DB_URI, {
 			useUnifiedTopology: true
 		});
 
 		try {
 
-			const {game_id} = data;
+			/* Get id from the game to be joined */
+			const { gameId } = data;
 
-			/* connect to mongo db */
-			await mongo_client.connect();
+			/* Get username */
+			const username = users[socket.id];
 
-			/* search for the game using game_id */
-			const game_collection = mongo_client.db('neochessdb').collection('games_test');
-			let game = await game_collection.findOne({_id: new ObjectId(game_id)});
+			/* Connect to MongoDB */
+			await mongo.connect();
 
-			if (game.white_username && game.black_username) {
+			/* Search for the game using gameId */
+			const gameCollection = mongo.db('neochessdb').collection('games_test');
+			let game = await gameCollection.findOne({_id: new ObjectId(gameId)});
 
-				/* log the event */
-				const loginfo = {game};
-				logger.log({
-					level: 'info',
-					message: `join game attempt failed ${log.dict2log(loginfo)}`
-				});
+			if (game.whiteUsername && game.blackUsername) {
 
-				/* return error */
-				io.to(socket.id).emit('joinGame', {
+				/* Return COULD_NOT_JOIN error */
+				io.to(socket.id).emit('gameJoined', {
 					error: {
 						code: 'COULD_NOT_JOIN',
 						message: 'could not join'
 					}
 				});
 
+				/* Log the event */
+				const loginfo = {username, game};
+				logger.log({
+					level: 'info',
+					message: `Failed join attempt: ${log.dict2log(loginfo)}`
+				});
+
 				return;
 			}
 
-			const username = utils.random_username();
-			const orientation = game.white_username ? 'black' : 'white';
+			/* Define new player orientation */
+			const orientation = game.whiteUsername ? 'black' : 'white';
 
+			/* Generate info to update the game in the database */
 			let update;
-			if (orientation === 'white') update = {white_username: username}
-			else if (orientation === 'black') update = {black_username: username}
+			if (orientation === 'white') update = {whiteUsername: username};
+			else if (orientation === 'black') update = {blackUsername: username};
 
-			const result = await game_collection.findOneAndUpdate(
-				{_id: new ObjectId(game_id)},
+			/* Update the game in the database */
+			const result = await gameCollection.findOneAndUpdate(
+				{_id: new ObjectId(gameId)},
 				{$set: update},
 				{returnOriginal: false}
 			);
 
-			game = result.value
+			/* Get updated game */
+			game = result.value;
 
-			/* generate game parameters */
+			/* Generate game parameters */
 			const params = {
-				game_id: game._id,
+				gameId: game._id,
 				orientation,
 				username,
 				fen: game.fen,
 				lastMove: game.lastMove
-			}
+			};
 
-			/* log the event */
+			/* User joins the game room */
+			socket.join(params.gameId);
+			games[username] = params.gameId;
+
+			/* Game parameters are emitted to the user */
+			io.to(socket.id).emit('gameJoined', {game: {params}});
+
+			/* Log the event */
 			const loginfo = {game};
 			logger.log({
 				level: 'info',
-				message: `join game ${log.dict2log(loginfo)}`
+				message: `Join game ${log.dict2log(loginfo)}`
 			});
-
-			socket.join(params.game_id);
-
-			/* return the game */
-			io.to(socket.id).emit('joinGame', {game: {params}});
 
 			return;
 
 		} catch (error) {
 
+			/* Log the error, emit error */
 			console.log(error);
-			socket.emit('newGame', {
+			socket.emit('gameJoined', {
 				error: {
 					code: 'INTERNAL_SERVER_ERROR',
 					message: 'internal server error'
@@ -205,51 +289,89 @@ io.on('connection', (socket) => {
 
 		} finally {
 
-			await mongo_client.close();
+			/* Close MongoDB instance */
+			await mongo.close();
 		}
 	});
 
-	socket.on('move', async (data) => {
+	socket.on('move', async (movedata) => {
 
-		/* mongodb instance */
-		const mongo_client = new MongoClient(process.env.NEOCHESS_DB_URI, {
+		/* MongoDB instance */
+		const mongo = new MongoClient(process.env.NEOCHESS_DB_URI, {
 			useUnifiedTopology: true
 		});
 
 		try {
 
-			const { game_id, fen, move } = data;
+			/* Get gameId, fen and move */
+			const { username, gameId, fen, move } = movedata;
 
-			/* connect to mongo db */
-			await mongo_client.connect();
+			/* Connect to mongo db */
+			await mongo.connect();
 
-			/* search for the game using game_id */
-			const game_collection = mongo_client.db('neochessdb').collection('games_test');
-
-			const update = { fen, lastMove: move };
+			/* Search for the game using gameId */
+			const gameCollection = mongo.db('neochessdb').collection('games_test');
 
 			/* Update the game */
-			const result = await game_collection.findOneAndUpdate(
-				{_id: new ObjectId(game_id)},
+			const update = { fen, lastMove: move };
+			const result = await gameCollection.findOneAndUpdate(
+				{_id: new ObjectId(gameId)},
 				{$set: update},
 				{returnOriginal: false}
 			);
 
+			/* Get updated game */
 			const game = result.value;
 
-			const logdata = {
-				username: data.username, game_id: data.game_id,
-				move: data.move
-			}
+			/* Log the event */
+			const logdata = { username, gameId, move };
 			logger.log({
 				level: 'info',
-				message: `new move ${log.dict2log(logdata)}`
+				message: `New move ${log.dict2log(logdata)}`
 			});
 
-			io.to(game_id).emit('move', data);
+			/* Emit move to the game room */
+			io.to(gameId).emit('moved', movedata);
+
+			/* Emit updated game data to each user */
+			/* TODO: This could be improved. I believe only one socket signal needs to
+			** emitted. Keeping this way for now to avoid breaking other functions */
+
+			// const sockets = _.invert(users); // TODO: This is bad, change it later
+			const blackUsername = game.blackUsername;
+			const whiteUsername = game.whiteUsername;
+
+			/* Emit update game signal to black */
+			io.to(blackUsername+sockets[blackUsername]).emit('updateGame', {
+				game: {
+					params: {
+						gameId: game._id,
+						orientation: 'black',
+						username: blackUsername,
+						fen: game.fen,
+						lastMove: game.lastMove
+					}
+				}
+			});
+
+			/* Emit update game signal to white */
+			io.to(whiteUsername+sockets[whiteUsername]).emit('updateGame', {
+				game: {
+					params: {
+						gameId: game._id,
+						orientation: 'white',
+						username: whiteUsername,
+						fen: game.fen,
+						lastMove: game.lastMove
+					}
+				}
+			});
+
+			return;
 
 		} catch (error) {
 
+			/* Log the error, emit error */
 			console.log(error);
 			socket.emit('newGame', {
 				error: {
@@ -260,7 +382,8 @@ io.on('connection', (socket) => {
 
 		} finally {
 
-			await mongo_client.close();
+			/* Close MongoDB instance */
+			await mongo.close();
 		}
 	});
 });
@@ -269,6 +392,6 @@ io.on('connection', (socket) => {
 server.listen(port, () => {
 	logger.log({
 		level: 'info',
-		message: `neochess server started at port ${port}`
+		message: `Neochess server is online at port ${port}`
 	});
 });

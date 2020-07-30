@@ -45,7 +45,7 @@ export default {
 			else return this.defined_board_size;
 		},
 		game_url() {
-			return `${this.base_url}/#/game/${this.$store.state.game.params.game_id}`;
+			return `${this.base_url}/#/game/${this.$store.state.game.params.gameId}`;
 		},
 		username() {
 			return this.$store.state.username;
@@ -79,7 +79,7 @@ export default {
 		},
 		join_game() {
 			if (!this.$store.state.game) {
-				this.$socket.emit('joinGame', {game_id: this.$route.params.game_id});
+				this.$socket.emit('joinGame', {gameId: this.$route.params.gameId});
 			} else {
 				this.load();
 			}
@@ -87,10 +87,17 @@ export default {
 	},
 	sockets: {
 		listener: {
-			joinGame: function (data) {
+			connect: function () {
+				if (!this.$store.state.username)
+					this.$socket.emit('username', {});
+				else this.$socket.emit('username', {username: this.$store.state.username});
+			},
+			username: function(data) {
+				this.$store.commit('update_username', data.username);
+			},
+			gameJoined: function (data) {
 				if (data.game) {
 					this.$store.commit('update_game', data.game);
-					this.$store.commit('update_username', data.game.params.username);
 					this.load();
 				} else {
 					this.status = data.error.code;

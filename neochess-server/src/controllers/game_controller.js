@@ -63,7 +63,7 @@ const new_game = async (req, res) => {
 
 		/* generate game parameters */
 		const params = {
-			game_id: result.insertedId,
+			gameId: result.insertedId,
 			orientation,
 			username: orientation === 'black' ? game.black_username : game.white_username
 		}
@@ -105,14 +105,14 @@ const join_game = async (req, res) => {
 			throw status.Exception('INPUT_ERROR', v_result.array());
 
 		/* extract inputs */
-		const {game_id} = req.body;
+		const {gameId} = req.body;
 
 		/* connect to mongo db */
 		await mongo_client.connect();
 
-		/* search for the game using game_id */
+		/* search for the game using gameId */
 		const game_collection = mongo_client.db('neochessdb').collection('games_test');
-		let game = await game_collection.findOne({_id: new ObjectId(game_id)});
+		let game = await game_collection.findOne({_id: new ObjectId(gameId)});
 
 		if (game.white_username && game.black_username) {
 
@@ -135,7 +135,7 @@ const join_game = async (req, res) => {
 		else if (orientation === 'black') update = {black_username: username}
 
 		const result = await game_collection.findOneAndUpdate(
-			{_id: new ObjectId(game_id)},
+			{_id: new ObjectId(gameId)},
 			{$set: update},
 			{returnOriginal: false}
 		);
@@ -144,7 +144,7 @@ const join_game = async (req, res) => {
 
 		/* generate game parameters */
 		const params = {
-			game_id: game._id,
+			gameId: game._id,
 			orientation,
 			username
 		}

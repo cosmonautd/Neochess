@@ -21,20 +21,27 @@ export default {
 			this.$socket.emit('newGame', {});
 		},
 		go_to_new_game(game) {
-			this.$store.commit('update_username', game.params.username);
 			this.$store.commit('update_game', game);
-			this.$router.push({ name: 'game', params: {game_id: game.params.game_id}});
+			this.$router.push({ name: 'game', params: {gameId: game.params.gameId}});
 		}
 	},
 	sockets: {
 		listener: {
 			connect: function () {
-				console.log('socket connected')
+				if (!this.$store.state.username)
+					this.$socket.emit('username', {});
+				else this.$socket.emit('username', {username: this.$store.state.username});
 			},
-			newGame: function (data) {
+			username: function(data) {
+				this.$store.commit('update_username', data.username);
+			},
+			gameCreated: function (data) {
 				this.go_to_new_game(data.game);
 			}
 		}
+	},
+	created() {
+		// this.$socket.open();
 	}
 }
 </script>

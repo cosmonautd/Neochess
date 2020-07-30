@@ -38,7 +38,10 @@ Vue.use(new VueSocketIO({
 		actionPrefix: 'SOCKET_',
 		mutationPrefix: 'SOCKET_'
 	},
-	// options: { path: "/my-app/" }
+	options: {
+		// path: "/my-app/"
+		// autoConnect: false
+	}
 }));
 
 Vue.use(VueAxios, axios)

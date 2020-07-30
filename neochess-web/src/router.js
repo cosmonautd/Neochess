@@ -14,7 +14,7 @@ export default new Router({
 			component: Landing
 		},
 		{
-			path: '/game/:game_id',
+			path: '/game/:gameId',
 			name: 'game',
 			component: Game
 		}

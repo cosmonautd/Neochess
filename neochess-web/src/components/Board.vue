@@ -14,13 +14,13 @@ export default {
 					fen: this.game.fen()
 				})
 				this.calculatePromotions()
-				const data = {
+				const movedata = {
 					username: this.$store.state.username,
-					game_id: this.$store.state.game.params.game_id,
+					gameId: this.$store.state.game.params.gameId,
 					move: {from: orig, to: dest, promotion: this.promoteTo},
 					fen: this.game.fen()
 				};
-				this.$socket.emit('move', data);
+				this.$socket.emit('move', movedata);
 			};
 		},
 		findCheckSquare() {
@@ -49,10 +49,10 @@ export default {
 	},
 	sockets: {
 		listener: {
-			move: function (data) {
-				this.game.move(data.move);
+			moved: function (movedata) {
+				this.game.move(movedata.move);
 				this.board.set({
-					fen: data.fen,
+					fen: movedata.fen,
 					turnColor: this.toColor(),
 					check: this.findCheckSquare(),
 					movable: {
@@ -60,23 +60,27 @@ export default {
 						dests: this.possibleMoves(),
 						events: { after: this.playerMove()},
 					},
-					lastMove: [data.move.from, data.move.to]
+					lastMove: [movedata.move.from, movedata.move.to]
 				});
 				this.board.playPremove();
+			},
+			updateGame: function(data) {
+				if (data.game) {
+					this.$store.commit('update_game', data.game);
+				}
 			}
 		}
 	},
 	mounted() {
 		if (this.player == 'white') {
-			this.board.set({
-				movable: { events: { after: this.playerMove()} },
-			})
-		}
-		if (this.player == 'black') {
-			if (this.$store.state.game.params.fen) {
-				this.game.move(this.$store.state.game.params.lastMove);
+			if (!this.$store.state.game.params.fen) {
 				this.board.set({
-					fen: this.$store.state.game.params.fen,
+					movable: { events: { after: this.playerMove()} },
+				});
+			} else {
+				this.game.load(this.$store.state.game.params.fen);
+				this.board.set({
+					fen: this.game.fen(),
 					turnColor: this.toColor(),
 					check: this.findCheckSquare(),
 					movable: {
@@ -88,7 +92,26 @@ export default {
 						this.$store.state.game.params.lastMove.from,
 						this.$store.state.game.params.lastMove.to
 					]
-				})
+				});
+			}
+		}
+		if (this.player == 'black') {
+			if (this.$store.state.game.params.fen) {
+				this.game.load(this.$store.state.game.params.fen);
+				this.board.set({
+					fen: this.game.fen(),
+					turnColor: this.toColor(),
+					check: this.findCheckSquare(),
+					movable: {
+						color: this.player,
+						dests: this.possibleMoves(),
+						events: { after: this.playerMove()},
+					},
+					lastMove: [
+						this.$store.state.game.params.lastMove.from,
+						this.$store.state.game.params.lastMove.to
+					]
+				});
 			}
 		}
 	}
