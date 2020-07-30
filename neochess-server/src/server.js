@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const {MongoClient, ObjectId} = require('mongodb');
 const _ = require('lodash');
+const chessjs = require('chess.js');
 
 /* configure express and socket.io */
 const app = express();
@@ -32,20 +33,32 @@ app.use(routes);
 /* get port from .env */
 const port = process.env.NEOCHESS_SERVER_URL.split(':')[2]
 
-const secondsToMinutes = (seconds) => {
-	const m = Math.floor(seconds/60);
-	const s = (seconds % 60).toString().padStart(2, '0');
-	return `${m}:${s}`;
-};
-
 /* */
 let users = {};
 let sockets = {};
 let games = {};
+let gameIds = {};
 let timers = {};
 let timerStarted = {};
 
-const TIME_CONTROL = 10;
+const TIME_CONTROL = 180;
+
+const gameOver = (gameId, username, opponent, resultData) => {
+	/* Emit game over signal to the game room */
+	io.to(gameId).emit('gameOver', resultData);
+	/* Stop time counting for both players */
+	if (timers[username+gameId].loop) {
+		clearInterval(timers[username+gameId].loop);
+		timers[username+gameId].loop = null;
+	}
+	if (timers[opponent+gameId].loop) {
+		clearInterval(timers[opponent+gameId].loop);
+		timers[opponent+gameId].loop = null;
+	}
+	/* Stop time sync for the game room */
+	if (games[gameId].timesync)
+		clearInterval(games[gameId].timesync);
+}
 
 io.on('connection', (socket) => {
 
@@ -85,8 +98,8 @@ io.on('connection', (socket) => {
 				sockets[username] = socket.id;
 
 				/* Reconnects the user to the game */
-				if (games[username]) {
-					const gameId = games[username];
+				if (gameIds[username]) {
+					const gameId = gameIds[username];
 					socket.join(gameId);
 				}
 	
@@ -153,10 +166,16 @@ io.on('connection', (socket) => {
 			/* Create a game */
 			const gameCollection = mongo.db('neochessdb').collection('games_test');
 			const result = await gameCollection.insertOne(game);
+			const gameId = result.insertedId
+
+			games[gameId] = {
+				game: new chessjs.Chess(),
+				timesync: null
+			}
 
 			/* Generate game parameters */
 			const params = {
-				gameId: result.insertedId,
+				gameId,
 				orientation,
 				username,
 				opponent: null,
@@ -165,7 +184,7 @@ io.on('connection', (socket) => {
 			};
 
 			/* User leaves previous game */
-			socket.leave(games[username]);
+			socket.leave(gameIds[username]);
 			if (timers[username+params.gameId]) {
 				if (timers[username+params.gameId].loop){
 					clearInterval(timers[username+gameId].loop);
@@ -175,7 +194,7 @@ io.on('connection', (socket) => {
 
 			/* User joins the new game room */
 			socket.join(params.gameId);
-			games[username] = params.gameId;
+			gameIds[username] = params.gameId;
 
 			/* Game parameters are emitted to the user */
 			io.to(params.gameId).emit('gameCreated', {game: {params}});
@@ -296,7 +315,7 @@ io.on('connection', (socket) => {
 
 			/* User joins the game room */
 			socket.join(params.gameId);
-			games[username] = params.gameId;
+			gameIds[username] = params.gameId;
 
 			/* Game parameters are emitted to the user */
 			io.to(socket.id).emit('gameJoined', {game: {params}});
@@ -320,7 +339,7 @@ io.on('connection', (socket) => {
 				time: TIME_CONTROL
 			};
 
-			setInterval(() => {
+			games[gameId].timesync = setInterval(() => {
 				/* Emit time sync signals */
 				let sync = {};
 				const whiteUsername = game.whiteUsername;
@@ -419,6 +438,19 @@ io.on('connection', (socket) => {
 					loop: setInterval(() => {
 						const t = timers[opponent+gameId].time;
 						timers[opponent+gameId].time = Math.max(0, t - 1);
+						if(timers[opponent+gameId].time == 0) {
+							/* TODO: draw if player has insufficient material
+							** For now, if the time is over, the other player wins...
+							*/
+							const result = 'ontime';
+							let winner = username;
+
+							gameOver(gameId, username, opponent, {
+								result,
+								winner
+							});
+						};
+						
 					}, 1000),
 					time: timers[opponent+gameId].time
 				};
@@ -452,6 +484,41 @@ io.on('connection', (socket) => {
 					}
 				}
 			});
+
+			/* Update game representation in memory */
+			games[gameId].game.move(move);
+
+			/* Log the game is ascii */
+			console.log(games[gameId].game.ascii());
+
+			/* Detect if game is over and determine the result */
+			if (games[gameId].game.game_over()) {
+
+				let result;
+				let winner = null;
+
+				if (games[gameId].game.in_checkmate()) {
+
+					result = 'checkmate';
+					winner = username
+
+				} else {
+
+					if (games[gameId].game.in_draw()) {
+						if (games[gameId].game.in_stalemate())
+							result = 'draw.stalemate';
+						else if (games[gameId].game.in_threefold_repetition())
+							result = 'draw.threefold_repetition';
+						else if (games[gameId].game.insufficient_material())
+							result = 'draw.insufficient_material';
+					}
+				}
+
+				gameOver(gameId, username, opponent, {
+					result,
+					winner
+				});
+			}
 
 			return;
 

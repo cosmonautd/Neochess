@@ -116,6 +116,11 @@ export default {
 					this.status = data.error.code;
 					this.status_message = data.error.message;
 				}
+			},
+			gameOver: function (data) {
+				console.log('Game Over')
+				console.log('Result:', data.result);
+				console.log('Winner:', data.winner);
 			}
 		}
 	},

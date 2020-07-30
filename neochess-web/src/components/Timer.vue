@@ -13,7 +13,7 @@
 </template>
 
 <script>
-const TIME_CONTROL = 10;
+const TIME_CONTROL = 180;
 export default {
 	name: "neochess-timer",
 	props: {
