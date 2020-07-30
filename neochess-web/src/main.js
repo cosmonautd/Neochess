@@ -2,8 +2,9 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 import createPersistedState from 'vuex-persistedstate'
 import VueSocketIO from 'vue-socket.io'
-import axios from 'axios'
-import VueAxios from 'vue-axios'
+// import axios from 'axios'
+// import VueAxios from 'vue-axios'
+import { BootstrapVue, IconsPlugin } from 'bootstrap-vue'
 
 import App from './App.vue'
 import router from './router'
@@ -44,7 +45,10 @@ Vue.use(new VueSocketIO({
 	}
 }));
 
-Vue.use(VueAxios, axios)
+// Vue.use(VueAxios, axios)
+
+Vue.use(BootstrapVue);
+Vue.use(IconsPlugin);
 
 new Vue({
 	router,

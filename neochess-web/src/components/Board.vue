@@ -16,6 +16,7 @@ export default {
 				this.calculatePromotions()
 				const movedata = {
 					username: this.$store.state.username,
+					player: this.player,
 					gameId: this.$store.state.game.params.gameId,
 					move: {from: orig, to: dest, promotion: this.promoteTo},
 					fen: this.game.fen()
@@ -23,10 +24,10 @@ export default {
 				this.$socket.emit('move', movedata);
 			};
 		},
-		findCheckSquare() {
+		findCheckSquare(lastMovePlayer) {
 			const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
 			if (this.game.in_check()) {
-				var king = this.turn === 'w' ? 'K' : 'k';
+				var king = lastMovePlayer === 'black' ? 'K' : 'k';
 				var ranks = this.game.fen().split(' ')[0].split('/');
 				for (let i=0; i < ranks.length; i++) {
 					const rank = ranks[i];
@@ -54,7 +55,7 @@ export default {
 				this.board.set({
 					fen: movedata.fen,
 					turnColor: this.toColor(),
-					check: this.findCheckSquare(),
+					check: this.findCheckSquare(movedata.player),
 					movable: {
 						color: this.player,
 						dests: this.possibleMoves(),

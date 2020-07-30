@@ -1,81 +1,27 @@
 <template>
-<div id="app" class="small-container">
-	<!-- <div>
-		<img alt="Vue logo" src="./assets/logo.png">
-	</div> -->
+<div id="app" class="medium-container">
 	<router-view/>
 </div>
 </template>
 
 <script>
+import 'bootstrap/dist/css/bootstrap.css'
+import 'bootstrap-vue/dist/bootstrap-vue.css'
 export default {
-	name: "App",
-	components: {
-	},
-	data() {
-		return {
-			url: [],
-		}
-	},
-	methods: {
-		async getEmployees() {
-			try {
-				const res = await fetch('https://jsonplaceholder.typicode.com/users');
-				const data = await res.json();
-				this.employees = data;
-			} catch (error) {
-				console.error(error);
-			}
-		},
-		async addEmployee(employee) {
-			try {
-				const res = await fetch('https://jsonplaceholder.typicode.com/users', {
-					method: 'POST',
-					body: JSON.stringify(employee),
-					headers: { 'Content-type': 'application/json; charset=UTF-8' },
-				})
-				const data = await res.json()
-				this.employees = [...this.employees, data]
-			} catch (error) {
-				console.error(error)
-			}
-		},
-		async editEmployee(id, updatedEmployee) {
-			try {
-				const res = await fetch(`https://jsonplaceholder.typicode.com/users/${id}`, {
-					method: 'PUT',
-					body: JSON.stringify(updatedEmployee),
-					headers: { 'Content-type': 'application/json; charset=UTF-8' },
-				})
-				const data = await res.json()
-				this.employees = this.employees.map(
-					employee => (employee.id === id ? data : employee)
-				);
-			} catch (error) {
-				console.error(error)
-			}
-		},
-		async deleteEmployee(id) {
-			try {
-				await fetch(`https://jsonplaceholder.typicode.com/users/${id}`, {
-					method: "DELETE"
-				});
-				this.employees = this.employees.filter(employee => employee.id !== id);
-			} catch (error) {
-				console.error(error);
-			}
-		}
-	},
-	mounted() {
-		this.getEmployees()
-	}
+	name: "App"
 }
 </script>
 
-<style>
+<style lang="scss">
 body {
 	color: #ffffff;
 	background-color: #1D1D1D;
+}
+p {
+	margin-bottom: 0%;
+}
+.spacing-top {
+	margin-top: 1.5em;
 }
 #app {
 	margin-top: 1em;
@@ -94,5 +40,8 @@ body {
 .center {
   margin: auto;
   width: 50%;
+}
+.medium-container {
+	max-width: 1200px;
 }
 </style>

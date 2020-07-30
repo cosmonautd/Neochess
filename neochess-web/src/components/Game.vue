@@ -4,12 +4,23 @@
 		<p class="neochess-title">game!</p>
 		<p>auto generated username: {{ username }}</p>
 		<p>share this link with a friend to start playing: <a :href="game_url">LINK</a></p>
-		<Board
-			class='spacing-top'
-			:size="board_size"
-			:orientation="orientation"
-			:player="orientation"
-		/>
+		<b-container fluid class="bv-example-row">
+			<b-row align-h="center">
+				<b-col align-self="center">
+					<div class='timer spacing-top'>
+						<Timer/>
+					</div>
+				</b-col>
+				<b-col sm="12" md="12" lg="9" xl="9">
+					<Board
+						class='spacing-top'
+						:size="board_size"
+						:orientation="orientation"
+						:player="orientation"
+					/>
+				</b-col>
+			</b-row>
+		</b-container>
 	</div>
 	<div v-else-if="status === 'loading'">
 		<p class="neochess-title">loading...</p>
@@ -22,11 +33,13 @@
 
 <script>
 import Board from "./Board.vue";
+import Timer from "./Timer.vue";
 import VueScreenSize from 'vue-screen-size'
 export default {
 	name: "neochess-game",
 	components: {
-		Board
+		Board,
+		Timer
 	},
 	props: {
 	},
@@ -114,10 +127,13 @@ export default {
 </script>
 
 <style scoped>
-p {
-	margin-bottom: 0%;
+.timer {
+	width: 100%;
+	height: auto;
 }
-.spacing-top {
-	margin-top: 1.5em;
-}
+/* @media screen and (max-width: 991px) {
+    .timer {
+        width: 85%;
+    }
+} */
 </style>

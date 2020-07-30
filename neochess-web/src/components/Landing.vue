@@ -9,13 +9,6 @@
 
 export default {
 	name: "neochess-landing",
-	props: {
-		url: String
-	},
-	data() {
-		return {
-		}
-	},
 	methods: {
 		new_game() {
 			this.$socket.emit('newGame', {});
