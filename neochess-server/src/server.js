@@ -31,7 +31,20 @@ const routes = require('./routes');
 app.use(routes);
 
 /* get port from .env */
-const port = process.env.NEOCHESS_SERVER_URL.split(':')[2]
+const port = process.env.NEOCHESS_SERVER_URL.split(':')[2];
+
+/* MongoDB instance */
+const mongo = new MongoClient(process.env.NEOCHESS_DB_URI, {
+	useUnifiedTopology: true
+});
+
+/* Connect to MongoDB */
+mongo.connect().then(() => {
+	logger.log({
+		level: 'info',
+		message: `Neochess server is connected to MongoDB Cloud`
+	});
+});
 
 /* */
 let users = {};
@@ -148,11 +161,6 @@ io.on('connection', (socket) => {
 	});
 
 	socket.on('newGame', async (data) => {
-		
-		/* MongoDB instance */
-		const mongo = new MongoClient(process.env.NEOCHESS_DB_URI, {
-			useUnifiedTopology: true
-		});
 
 		try {
 
@@ -166,9 +174,6 @@ io.on('connection', (socket) => {
 				fen: null,
 				lastMove: null
 			}
-
-			/* Connect to MongoDB */
-			await mongo.connect();
 
 			/* Create a game */
 			const gameCollection = mongo.db('neochessdb').collection('games_test');
@@ -243,17 +248,12 @@ io.on('connection', (socket) => {
 
 		} finally {
 
-			/* Close MongoDB instance */
-			await mongo.close();
+			// /* Close MongoDB instance */
+			// await mongo.close();
 		}
 	});
 
 	socket.on('joinGame', async (data) => {
-
-		/* MongoDB instance */
-		const mongo = new MongoClient(process.env.NEOCHESS_DB_URI, {
-			useUnifiedTopology: true
-		});
 
 		try {
 
@@ -262,9 +262,6 @@ io.on('connection', (socket) => {
 
 			/* Get username */
 			const username = users[socket.id];
-
-			/* Connect to MongoDB */
-			await mongo.connect();
 
 			/* Search for the game using gameId */
 			const gameCollection = mongo.db('neochessdb').collection('games_test');
@@ -361,6 +358,7 @@ io.on('connection', (socket) => {
 				let sync = {};
 				const whiteUsername = game.whiteUsername;
 				const blackUsername = game.blackUsername;
+				sync.gameId = gameId;
 				sync[whiteUsername] = timers[whiteUsername+gameId].time;
 				sync[blackUsername] = timers[blackUsername+gameId].time;
 				io.to(params.gameId).emit('timesync', sync);
@@ -394,17 +392,12 @@ io.on('connection', (socket) => {
 
 		} finally {
 
-			/* Close MongoDB instance */
-			await mongo.close();
+			// /* Close MongoDB instance */
+			// await mongo.close();
 		}
 	});
 
 	socket.on('move', async (movedata) => {
-
-		/* MongoDB instance */
-		const mongo = new MongoClient(process.env.NEOCHESS_DB_URI, {
-			useUnifiedTopology: true
-		});
 
 		try {
 
@@ -413,9 +406,6 @@ io.on('connection', (socket) => {
 
 			/* Update game representation in memory */
 			games[gameId].game.move(move);
-
-			/* Connect to mongo db */
-			await mongo.connect();
 
 			/* Search for the game using gameId */
 			const gameCollection = mongo.db('neochessdb').collection('games_test');
@@ -556,8 +546,8 @@ io.on('connection', (socket) => {
 
 		} finally {
 
-			/* Close MongoDB instance */
-			await mongo.close();
+			// /* Close MongoDB instance */
+			// await mongo.close();
 		}
 	});
 });

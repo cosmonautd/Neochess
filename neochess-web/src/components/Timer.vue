@@ -50,6 +50,7 @@ export default {
 	sockets: {
 		listener: {
 			timesync: function (sync) {
+				if (sync.gameId === this.$store.state.game.params.gameId)
 				this.$store.commit('update_time', {
 					t1: sync[this.username],
 					t2: sync[this.opponent]
