@@ -156,7 +156,10 @@ io.on('connection', (socket) => {
 
 	socket.on('getGames', async (data) => {
 
-		socket.emit('gamesList', {games: activeGames});
+		const username = users[socket.id];
+		socket.emit('gamesList', {
+			games: activeGames.filter(g => g.username !== username)
+		});
 
 	});
 
@@ -267,7 +270,8 @@ io.on('connection', (socket) => {
 			const gameCollection = mongo.db('neochessdb').collection('games_test');
 			let game = await gameCollection.findOne({_id: new ObjectId(gameId)});
 
-			if (game.whiteUsername && game.blackUsername) {
+			if (game.whiteUsername && game.blackUsername ||
+				(game.whiteUsername === username || game.blackUsername === username) ) {
 
 				/* Return COULD_NOT_JOIN error */
 				io.to(socket.id).emit('gameJoined', {
