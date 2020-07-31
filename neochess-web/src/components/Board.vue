@@ -11,9 +11,16 @@ export default {
 				}
 				this.game.move({from: orig, to: dest, promotion: this.promoteTo})
 				this.board.set({
-					fen: this.game.fen()
+					fen: this.game.fen(),
+					check: this.findCheckSquare(this.player),
+					movable: {
+						color: this.player,
+						dests: this.possibleMoves(),
+						events: { after: this.playerMove()},
+					},
+					lastMove: [orig, dest]
 				})
-				this.calculatePromotions()
+				this.calculatePromotions();
 				const movedata = {
 					username: this.$store.state.username,
 					player: this.player,
@@ -22,7 +29,6 @@ export default {
 					fen: this.game.fen()
 				};
 				this.$socket.emit('move', movedata);
-				if(!this.game.in_check()) this.$sounds.get('move_user').play();
 			};
 		},
 		findCheckSquare(lastMovePlayer) {
@@ -52,19 +58,35 @@ export default {
 	sockets: {
 		listener: {
 			moved: function (movedata) {
-				this.game.move(movedata.move);
-				this.board.set({
-					fen: movedata.fen,
-					turnColor: this.toColor(),
-					check: this.findCheckSquare(movedata.player),
-					movable: {
-						color: this.player,
-						dests: this.possibleMoves(),
-						events: { after: this.playerMove()},
-					},
-					lastMove: [movedata.move.from, movedata.move.to]
-				});
-				if(!this.game.in_check()) this.$sounds.get('move_opponent').play();
+				if (movedata.username != this.$store.state.username) {
+					this.game.move(movedata.move);
+					this.board.set({
+						fen: movedata.fen,
+						turnColor: this.toColor(),
+						check: this.findCheckSquare(movedata.player),
+						movable: {
+							color: this.player,
+							dests: this.possibleMoves(),
+							events: { after: this.playerMove()},
+						},
+						lastMove: [movedata.move.from, movedata.move.to]
+					});
+					this.calculatePromotions();
+				}
+
+				let capture = false;
+				const history = this.game.history({verbose: true});
+				if (history.length > 1) {
+					console.log('history:', history);
+					capture = history[history.length - 1].captured ? true : false;
+				}
+				else capture = false;
+
+				if (!this.game.in_check()) {
+					if (capture) this.$sounds.get('capture').play();
+					else this.$sounds.get('move').play();
+				}
+				
 				this.board.playPremove();
 			},
 			updateGame: function(data) {
