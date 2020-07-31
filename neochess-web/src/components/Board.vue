@@ -22,6 +22,7 @@ export default {
 					fen: this.game.fen()
 				};
 				this.$socket.emit('move', movedata);
+				if(!this.game.in_check()) this.$sounds.get('move_user').play();
 			};
 		},
 		findCheckSquare(lastMovePlayer) {
@@ -63,11 +64,13 @@ export default {
 					},
 					lastMove: [movedata.move.from, movedata.move.to]
 				});
+				if(!this.game.in_check()) this.$sounds.get('move_opponent').play();
 				this.board.playPremove();
 			},
 			updateGame: function(data) {
 				if (data.game) {
 					this.$store.commit('update_game', data.game);
+					if (this.game.in_check()) this.$sounds.get('check').play();
 				}
 			},
 			gameOver: function() {

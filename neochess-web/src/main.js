@@ -86,6 +86,15 @@ Vue.use(IconsPlugin);
 import VModal from 'vue-js-modal'
 Vue.use(VModal)
 
+import sounds from "vue-sounds";
+Vue.use(sounds, store, {
+	sounds:[
+		{name:"move_user", url:"https://davidborges.xyz/assets/impact_wood_planks_x2_drop_on_floor_together_003.mp3"},
+		{name:"move_opponent", url:"https://davidborges.xyz/assets/impact_wood_planks_x2_drop_on_floor_together_004.mp3"},
+		{name:"check", url:"https://davidborges.xyz/assets/multimedia_game_sound_synth_tone_bold_error_52992.mp3"},
+	]
+});
+
 new Vue({
 	router,
 	store,
