@@ -1,13 +1,13 @@
 <template>
 <div id="neochess-timer">
 	<div>
-		<div class="neochess-time">{{opponentTime}}</div>
+		<div class="neochess-time round-corners">{{opponentTime}}</div>
 		<div class="neochess-username">{{opponent}}</div>
 	</div>
 	<div class="vertical-spacing"></div>
 	<div>
 		<div class="neochess-username">{{username}}</div>
-		<div class="neochess-time">{{userTime}}</div>
+		<div class="neochess-time round-corners">{{userTime}}</div>
 	</div>
 </div>
 </template>
@@ -67,7 +67,7 @@ export default {
 }
 .neochess-time {
 	font-size: xxx-large;
-	background-color: darkgreen;
+	background-color: #333;
 }
 .neochess-username {
 	font-size: x-large;

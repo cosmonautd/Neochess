@@ -13,10 +13,10 @@
 		</thead> -->
 		<tbody>
 			<tr v-for="game in games" :key="game.gameId">
-				<td>{{ game.username }}</td>
+				<td class="left-round-corners">{{ game.username }}</td>
 				<td>{{ game.timeControl }}</td>
-				<td>
-					<button @click="joinGame(game.gameId)">
+				<td class="right-round-corners">
+					<button @click="joinGame(game.gameId)" class="round-corners">
 						Join
 					</button>
 				</td>
@@ -63,5 +63,11 @@ td {
 table {
 	border-collapse: separate; 
 	border-spacing: 0 1em;
+}
+.left-round-corners {
+	border-radius: 15px 0px 0px 15px;
+}
+.right-round-corners {
+	border-radius: 0px 15px 15px 0px;
 }
 </style>

@@ -4,7 +4,7 @@
 		<div class="vertical-spacing-4"></div>
 		<h1 class="neochess-title">neochess</h1>
 		<div class="vertical-spacing-4"></div>
-		<button @click="new_game()">start a game</button>
+		<button @click="new_game()" class="round-corners">start a game</button>
 		<div class="vertical-spacing-8"></div>
 		<GameList
 			:games="games"

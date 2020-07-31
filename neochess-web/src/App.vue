@@ -59,4 +59,7 @@ p {
 	height: 200px;
 	border: 3px solid green;
 }
+.round-corners {
+	border-radius: 15px 15px 15px 15px;
+}
 </style>
