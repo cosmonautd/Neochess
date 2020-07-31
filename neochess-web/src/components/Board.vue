@@ -69,10 +69,20 @@ export default {
 				if (data.game) {
 					this.$store.commit('update_game', data.game);
 				}
+			},
+			gameOver: function() {
+				this.board.set({
+					viewOnly: true
+				});
 			}
 		}
 	},
 	mounted() {
+		if (this.$store.state.status.code === 'over') {
+			this.board.set({
+				viewOnly: true
+			});
+		}
 		if (this.player == 'white') {
 			if (!this.$store.state.game.params.fen) {
 				this.board.set({

@@ -13,7 +13,6 @@
 </template>
 
 <script>
-const TIME_CONTROL = 180;
 export default {
 	name: "neochess-timer",
 	props: {
@@ -21,8 +20,6 @@ export default {
 	},
 	data() {
 		return {
-			t1: TIME_CONTROL,
-			t2: TIME_CONTROL,
 			timer: null,
 			lastMoveUser: null
 		}
@@ -37,10 +34,10 @@ export default {
 			else return 'waiting for opponent...'
 		},
 		userTime() {
-			return this.secondsToMinutes(this.t1);
+			return this.secondsToMinutes(this.$store.state.time.t1);
 		},
 		opponentTime() {
-			return this.secondsToMinutes(this.t2);
+			return this.secondsToMinutes(this.$store.state.time.t2);
 		}
 	},
 	methods: {
@@ -49,29 +46,14 @@ export default {
 			const s = (seconds % 60).toString().padStart(2, '0');
 			return `${m}:${s}`;
 		},
-		// startTimer() {
-		// 	let component = this;
-		// 	this.timer = setInterval(function() {
-		// 		if (component.lastMoveUser == component.username)
-		// 			component.t2 = Math.max(0, component.t2 - 1);
-		// 		else if (component.lastMoveUser == component.opponent)
-		// 			component.t1 = Math.max(0, component.t1 - 1);
-		// 	}, 1000);
-		// }
 	},
 	sockets: {
 		listener: {
-			// moved: function (movedata) {
-			// 	this.lastMoveUser = movedata.username;
-			// 	if (!this.timer) {
-			// 		if (movedata.player === 'black') {
-			// 			this.startTimer();
-			// 		}
-			// 	}
-			// },
 			timesync: function (sync) {
-				this.t1 = sync[this.username];
-				this.t2 = sync[this.opponent];
+				this.$store.commit('update_time', {
+					t1: sync[this.username],
+					t2: sync[this.opponent]
+				});
 			},
 		}
 	},

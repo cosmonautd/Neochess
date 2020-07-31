@@ -21,6 +21,8 @@
     "vue-axios": "^2.1.5",
     "vue-chessboard": "^0.6.7",
     "vue-drag-drop": "^1.1.4",
+    "vue-eagle-modal": "^1.0.6",
+    "vue-js-modal": "^2.0.0-rc.6",
     "vue-router": "^3.3.4",
     "vue-screen-size": "^1.0.1",
     "vue-socket.io": "^3.0.9",

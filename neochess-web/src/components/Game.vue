@@ -1,6 +1,6 @@
 <template>
 <div id="neochess-game" :key="neochess_game">
-	<div v-if="status === 'success'">
+	<div v-if="status.code === 'success' || status.code === 'over'">
 		<p class="neochess-title">game!</p>
 		<p>auto generated username: {{ username }}</p>
 		<p>share this link with a friend to start playing: <a :href="game_url">LINK</a></p>
@@ -22,12 +22,49 @@
 			</b-row>
 		</b-container>
 	</div>
-	<div v-else-if="status === 'loading'">
+	<div v-else-if="status.code === 'loading'">
 		<p class="neochess-title">loading...</p>
 	</div>
 	<div v-else>
-		<p class="neochess-title">{{status_message}}</p>
+		<p class="neochess-title">{{status.message}}</p>
 	</div>
+	<modal name="game-over-modal">
+		<div class="neochess-modal">
+			<b-container fluid class="bv-example-row">
+				<b-row align-h="center" class="neochess-row">
+					<b-col align-self="center">
+						<p v-if="status.win">Congratulations!</p>
+						<p v-if="status.draw">Well, let's call it a draw.</p>
+						<p v-if="status.lose">That's unfortunate.</p>
+						<p v-if="status.win && status.result === 'checkmate'">
+							You won by checkmate!
+						</p>
+						<p v-if="status.win && status.result === 'ontime'">
+							You won on time!
+						</p>
+						<p v-if="status.result === 'draw.stalemate'">
+							That was a stalemate.
+						</p>
+						<p v-if="status.result === 'draw.threefold_repetition'">
+							No one wins by repeating moves.
+						</p>
+						<p v-if="status.result === 'draw.insufficient_material'">
+							You both have insufficient material to deliver a checkmate.
+						</p>
+						<p v-if="status.lose && status.result === 'checkmate'">
+							You lost by checkmate!
+						</p>
+						<p v-if="status.lose && status.result === 'ontime'">
+							You lost on time!
+						</p>
+						<img v-if="status.win" src="../assets/icons8-crown-64.png"/>
+						<img v-if="status.draw" src="../assets/icons8-explosive-64.png"/>
+						<img v-if="status.lose" src="../assets/icons8-explosive-64.png"/>
+					</b-col>
+				</b-row>
+			</b-container>
+		</div>
+	</modal>
 </div>
 </template>
 
@@ -48,8 +85,6 @@ export default {
 			neochess_game: 0,
 			base_url: process.env.VUE_APP_URL,
 			defined_board_size: null,
-			status: 'loading',
-			status_message: 'loading...'
 		}
 	},
 	computed: {
@@ -72,13 +107,19 @@ export default {
 				'height': this.board_size + 'px'
 			}
 		},
+		status() {
+			return this.$store.state.status;
+		}
 	},
 	methods: {
 		load() {
 			this.defined_board_size = this.compute_board_size();
 			this.neochess_game += 1;
-			if (this.$store.state.game) this.status = 'success';
-			else this.status = 'failed';
+			if (this.$store.state.game) {
+				if (this.$store.state.status.code !== 'over')
+					this.$store.commit('update_status_code', 'success');
+			}
+			else this.$store.commit('update_status_code', 'failed');
 		},
 		compute_board_size() {
 			const w = this.$vssWidth;
@@ -113,14 +154,22 @@ export default {
 					this.$store.commit('update_game', data.game);
 					this.load();
 				} else {
-					this.status = data.error.code;
-					this.status_message = data.error.message;
+					this.$store.commit('update_status_code', data.error.code);
+					this.$store.commit('update_status_message', data.error.message);
 				}
 			},
 			gameOver: function (data) {
-				console.log('Game Over')
-				console.log('Result:', data.result);
-				console.log('Winner:', data.winner);
+				this.$store.commit('update_status_code', 'over');
+				this.$store.commit('update_status_result', data.result);
+				
+				if (data.winner === this.username) {
+					this.$store.commit('update_status_win', true);
+				}
+				else if (data.result.split('.')[0] === 'draw') {
+					this.$store.commit('update_status_draw', true);
+				} 
+				else this.$store.commit('update_status_lose', true);
+				this.$modal.show('game-over-modal');
 			}
 		}
 	},
@@ -141,4 +190,7 @@ export default {
         width: 85%;
     }
 } */
+.neochess-row {
+	height: 100%;
+}
 </style>

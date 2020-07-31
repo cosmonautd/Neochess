@@ -44,4 +44,12 @@ p {
 .medium-container {
 	max-width: 1200px;
 }
+.neochess-modal {
+	background-color: #1D1D1D;
+	width: 100%;
+	height: 100%;
+}
+.bv-example-row {
+	height: 100%;
+}
 </style>

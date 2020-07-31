@@ -267,7 +267,10 @@ io.on('connection', (socket) => {
 				});
 
 				/* Log the event */
-				const loginfo = {username, game};
+				const loginfo = {
+					username, gameId,
+					white: game.whiteUsername, black: game.blackUsername
+				};
 				logger.log({
 					level: 'info',
 					message: `Failed join attempt: ${log.dict2log(loginfo)}`
@@ -390,6 +393,9 @@ io.on('connection', (socket) => {
 			/* Get gameId, fen and move */
 			const { username, gameId, fen, move } = movedata;
 
+			/* Update game representation in memory */
+			games[gameId].game.move(move);
+
 			/* Connect to mongo db */
 			await mongo.connect();
 
@@ -397,7 +403,7 @@ io.on('connection', (socket) => {
 			const gameCollection = mongo.db('neochessdb').collection('games_test');
 
 			/* Update the game */
-			const update = { fen, lastMove: move };
+			const update = { fen, lastMove: move, pgn: games[gameId].game.pgn() };
 			const result = await gameCollection.findOneAndUpdate(
 				{_id: new ObjectId(gameId)},
 				{$set: update},
@@ -437,8 +443,8 @@ io.on('connection', (socket) => {
 				timers[opponent+gameId] = {
 					loop: setInterval(() => {
 						const t = timers[opponent+gameId].time;
-						timers[opponent+gameId].time = Math.max(0, t - 1);
-						if(timers[opponent+gameId].time == 0) {
+						timers[opponent+gameId].time = Math.max(-1, t - 1);
+						if(timers[opponent+gameId].time <= -1) {
 							/* TODO: draw if player has insufficient material
 							** For now, if the time is over, the other player wins...
 							*/
@@ -484,9 +490,6 @@ io.on('connection', (socket) => {
 					}
 				}
 			});
-
-			/* Update game representation in memory */
-			games[gameId].game.move(move);
 
 			/* Log the game is ascii */
 			console.log(games[gameId].game.ascii());

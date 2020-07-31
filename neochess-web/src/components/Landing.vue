@@ -7,6 +7,8 @@
 
 <script>
 
+const TIME_CONTROL = 180;
+
 export default {
 	name: "neochess-landing",
 	methods: {
@@ -34,7 +36,14 @@ export default {
 		}
 	},
 	created() {
-		// this.$socket.open();
+		this.$store.commit('update_game', null);
+		this.$store.commit('update_status_code', 'loading');
+		this.$store.commit('update_status_message', 'loading...');
+		this.$store.commit('update_status_win', false);
+		this.$store.commit('update_status_draw', false);
+		this.$store.commit('update_status_lose', false);
+		this.$store.commit('update_status_result', null);
+		this.$store.commit('update_time', {t1: TIME_CONTROL, t2: TIME_CONTROL});
 	}
 }
 </script>
