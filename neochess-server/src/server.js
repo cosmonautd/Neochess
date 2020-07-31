@@ -40,6 +40,7 @@ let games = {};
 let gameIds = {};
 let timers = {};
 let timerStarted = {};
+let activeGames = [];
 
 const TIME_CONTROL = 180;
 
@@ -140,6 +141,12 @@ io.on('connection', (socket) => {
 		}
 	});
 
+	socket.on('getGames', async (data) => {
+
+		socket.emit('gamesList', {games: activeGames});
+
+	});
+
 	socket.on('newGame', async (data) => {
 		
 		/* MongoDB instance */
@@ -203,6 +210,13 @@ io.on('connection', (socket) => {
 				loop: null,
 				time: TIME_CONTROL
 			};
+
+			/* Save game to active games in memory */
+			activeGames.push(
+				{username, timeControl: '3+0', gameId: params.gameId},
+			);
+
+			io.emit('gamesList', {games: activeGames});
 
 			/* Log the event */
 			const loginfo = {game};
@@ -351,6 +365,10 @@ io.on('connection', (socket) => {
 				sync[blackUsername] = timers[blackUsername+gameId].time;
 				io.to(params.gameId).emit('timesync', sync);
 			}, 500);
+
+			/* If join game, game is not active to join anymore */
+			activeGames = activeGames.filter(g => g.gameId.toString() != gameId);
+			io.emit('gamesList', {games: activeGames});
 
 			/* Log the event */
 			const loginfo = {game};

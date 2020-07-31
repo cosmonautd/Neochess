@@ -1,16 +1,31 @@
 <template>
 <div id="neochess-landing">
-	<p class="neochess-title">neochess</p>
-	<button @click="new_game()">start a game</button>
+	<div class="container-fluid">
+		<div class="vertical-spacing-4"></div>
+		<h1 class="neochess-title">neochess</h1>
+		<div class="vertical-spacing-4"></div>
+		<button @click="new_game()">start a game</button>
+		<div class="vertical-spacing-8"></div>
+		<GameList
+			:games="games"
+		/>
+	</div>
 </div>
 </template>
 
 <script>
-
 const TIME_CONTROL = 180;
-
+import GameList from "./GameList.vue";
 export default {
 	name: "neochess-landing",
+	components: {
+		GameList
+	},
+	data() {
+		return {
+			games: []
+		}
+	},
 	methods: {
 		new_game() {
 			this.$socket.emit('newGame', {});
@@ -30,6 +45,9 @@ export default {
 			username: function(data) {
 				this.$store.commit('update_username', data.username);
 			},
+			gamesList: function(data) {
+				this.games = data.games;
+			},
 			gameCreated: function (data) {
 				this.go_to_new_game(data.game);
 			}
@@ -43,10 +61,22 @@ export default {
 		this.$store.commit('update_status_draw', false);
 		this.$store.commit('update_status_lose', false);
 		this.$store.commit('update_status_result', null);
-		this.$store.commit('update_time', {t1: TIME_CONTROL, t2: TIME_CONTROL});
+		this.$store.commit('update_time', {t1: TIME_CONTROL, t2: TIME_CONTROL});	
+	},
+	mounted() {
+		this.$socket.emit('getGames');
 	}
 }
 </script>
 
 <style scoped>
+.vertical-spacing-4 {
+	height: 4em;
+}
+.vertical-spacing-8 {
+	height: 8em;
+}
+h1 {
+	color: white
+}
 </style>

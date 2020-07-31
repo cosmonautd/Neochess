@@ -52,4 +52,11 @@ p {
 .bv-example-row {
 	height: 100%;
 }
+.center {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	height: 200px;
+	border: 3px solid green;
+}
 </style>
