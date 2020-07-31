@@ -76,6 +76,14 @@
 import Board from "./Board.vue";
 import Timer from "./Timer.vue";
 import VueScreenSize from 'vue-screen-size'
+const seconds = {
+	'1+0': 60,
+	'3+0': 60*3,
+	'5+0': 60*5,
+	'10+0': 60*10,
+	'15+0': 60*15,
+	'30+0': 60*30,
+}
 export default {
 	name: "neochess-game",
 	components: {
@@ -159,6 +167,10 @@ export default {
 			gameJoined: function (data) {
 				if (data.game) {
 					this.$store.commit('update_game', data.game);
+					this.$store.commit('update_time', {
+						t1: seconds[data.game.params.timeControl],
+						t2: seconds[data.game.params.timeControl]
+					});
 					this.load();
 				} else {
 					this.$store.commit('update_status_code', data.error.code);

@@ -54,8 +54,14 @@ let gameIds = {};
 let timers = {};
 let timerStarted = {};
 let activeGames = [];
-
-const TIME_CONTROL = 180;
+const seconds = {
+	'1+0': 60,
+	'3+0': 60*3,
+	'5+0': 60*5,
+	'10+0': 60*10,
+	'15+0': 60*15,
+	'30+0': 60*30,
+}
 
 const gameOver = (gameId, username, opponent, resultData) => {
 	/* Emit game over signal to the game room */
@@ -174,6 +180,7 @@ io.on('connection', (socket) => {
 			const game = {
 				whiteUsername: orientation === 'white' ? username : null,
 				blackUsername: orientation === 'black' ? username : null,
+				timeControl: data.timeControl,
 				fen: null,
 				lastMove: null
 			}
@@ -194,6 +201,7 @@ io.on('connection', (socket) => {
 				orientation,
 				username,
 				opponent: null,
+				timeControl: data.timeControl,
 				fen: null,
 				lastMove: null
 			};
@@ -216,12 +224,12 @@ io.on('connection', (socket) => {
 
 			timers[username+params.gameId] = {
 				loop: null,
-				time: TIME_CONTROL
+				time: seconds[params.timeControl]
 			};
 
 			/* Save game to active games in memory */
 			activeGames.push(
-				{username, timeControl: '3+0', gameId: params.gameId},
+				{username, timeControl: params.timeControl, gameId: params.gameId},
 			);
 
 			io.emit('gamesList', {games: activeGames});
@@ -327,6 +335,7 @@ io.on('connection', (socket) => {
 				orientation,
 				username,
 				opponent,
+				timeControl: game.timeControl,
 				fen: game.fen,
 				lastMove: game.lastMove
 			};
@@ -354,7 +363,7 @@ io.on('connection', (socket) => {
 
 			timers[username+gameId] = {
 				loop: null,
-				time: TIME_CONTROL
+				time: seconds[params.timeControl]
 			};
 
 			games[gameId].timesync = setInterval(() => {
