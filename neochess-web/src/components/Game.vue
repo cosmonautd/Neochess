@@ -1,17 +1,21 @@
 <template>
 <div id="neochess-game" :key="neochess_game">
-	<div v-if="status.code === 'success' || status.code === 'over'">
-		<p class="neochess-title">game!</p>
-		<p>auto generated username: {{ username }}</p>
-		<p>share this link with a friend to start playing: <a :href="game_url">LINK</a></p>
+	<div v-if="status.code === 'success' || status.code === 'over'" class="spacing-top-double">
 		<b-container fluid class="bv-example-row">
 			<b-row align-h="center">
 				<b-col align-self="center">
+					<p :style="{visibility:show_share_message}">
+						Share the link of this page with a friend to start playing
+					</p>
 					<div class='timer spacing-top'>
 						<Timer/>
 					</div>
 				</b-col>
 				<b-col sm="12" md="12" lg="9" xl="9">
+					<p>
+						<span>You are connected as </span>
+						<span class="neochess-title">{{ this.$store.state.username }}</span>
+					</p>
 					<Board
 						class='spacing-top'
 						:size="board_size"
@@ -109,6 +113,9 @@ export default {
 		},
 		status() {
 			return this.$store.state.status;
+		},
+		show_share_message() {
+			return this.$store.state.game.params.opponent === null ? 'visible' : 'hidden';
 		}
 	},
 	methods: {
@@ -181,6 +188,9 @@ export default {
 </script>
 
 <style scoped>
+.spacing-top-double {
+	margin-top: 3em;
+}
 .timer {
 	width: 100%;
 	height: auto;

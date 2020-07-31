@@ -5,6 +5,11 @@
 		<h1 class="neochess-title">neochess</h1>
 		<div class="vertical-spacing-4"></div>
 		<button @click="new_game()" class="round-corners">start a game</button>
+		<div class="vertical-spacing-2"></div>
+		<p>
+			<span>You are connected as </span>
+			<span class="neochess-title">{{ this.$store.state.username }}</span>
+		</p>
 		<div class="vertical-spacing-8"></div>
 		<GameList
 			:games="games"
@@ -70,6 +75,9 @@ export default {
 </script>
 
 <style scoped>
+.vertical-spacing-2 {
+	height: 2em;
+}
 .vertical-spacing-4 {
 	height: 4em;
 }
