@@ -65,7 +65,7 @@ const store = new Vuex.Store({
 });
 
 Vue.use(new VueSocketIO({
-	debug: true,
+	debug: false,
 	connection: process.env.VUE_APP_SERVER_URL,
 	vuex: {
 		store,
@@ -73,8 +73,8 @@ Vue.use(new VueSocketIO({
 		mutationPrefix: 'SOCKET_'
 	},
 	options: {
-		// path: "/my-app/"
-		// autoConnect: false
+		path: process.env.VUE_APP_SOCKETIO_PATH,
+		autoConnect: true
 	}
 }));
 

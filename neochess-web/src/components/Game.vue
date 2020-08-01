@@ -95,7 +95,6 @@ export default {
 	data() {
 		return {
 			neochess_game: 0,
-			base_url: process.env.VUE_APP_URL,
 			defined_board_size: null,
 		}
 	},
@@ -103,9 +102,6 @@ export default {
 		board_size() {
 			if (!this.defined_board_size) return this.compute_board_size();
 			else return this.defined_board_size;
-		},
-		game_url() {
-			return `${this.base_url}/#/game/${this.$store.state.game.params.gameId}`;
 		},
 		username() {
 			return this.$store.state.username;
