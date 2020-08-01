@@ -1,7 +1,7 @@
-/* environment variables */
+/* Environment variables */
 require('dotenv').config()
 
-/* modules */
+/* External dependencies */
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
@@ -9,28 +9,29 @@ const {MongoClient, ObjectId} = require('mongodb');
 const _ = require('lodash');
 const chessjs = require('chess.js');
 
-/* configure express and socket.io */
+/* Internal dependencies */
+const log = require('./tools/log');
+const utils = require('./tools/utils');
+
+/* Configure logger */
+const logger = log.logger('Server');
+
+/* Configure express and socket.io */
 const app = express();
 const server = require('http').Server(app);
 const io = require('socket.io')(server);
 
-const utils = require('./tools/utils');
-
-/* configure logger */
-const log = require('./tools/log');
-const logger = log.logger('server');
-
-/* configure cors */
+/* Configure cors */
 app.use(cors());
 
-/* get JSON body */
+/* Get JSON body from requests */
 app.use(express.json());
 
-/* configure routes */
+/* Configure routes */
 const routes = require('./routes');
 app.use(routes);
 
-/* get port from .env */
+/* Get port from .env */
 const port = process.env.NEOCHESS_SERVER_URL.split(':')[2];
 
 /* MongoDB instance */
@@ -39,21 +40,33 @@ const mongo = new MongoClient(process.env.NEOCHESS_DB_URI, {
 });
 
 /* Connect to MongoDB */
+let gameCollection;
 mongo.connect().then(() => {
+	gameCollection = mongo.db('neochessdb').collection('games_test');
 	logger.log({
 		level: 'info',
-		message: `Neochess server is connected to MongoDB Cloud`
+		message: `Connected to MongoDB Cloud`
 	});
 });
 
-/* */
+/* Server memory
+**
+** users: maps a socket id to a username
+** sockets: maps a username to a socket id
+** timers: holds a timer for each pair (username, game id)
+** timesync: holds a time sync schedule for each game
+** currentGameId: maps a username to his current game
+** joinableGames: holds an array of games still waiting for an opponent to join
+*/
+
 let users = {};
 let sockets = {};
-let games = {};
-let gameIds = {};
 let timers = {};
-let timerStarted = {};
-let activeGames = [];
+let timesync = {};
+let currentGameId = {};
+let joinableGames = [];
+
+/* Available time controls */
 const seconds = {
 	'1+0': 60,
 	'3+0': 60*3,
@@ -63,22 +76,52 @@ const seconds = {
 	'30+0': 60*30,
 }
 
-const gameOver = (gameId, username, opponent, resultData) => {
-	/* Emit game over signal to the game room */
+/**
+ * Emits the gameOver event to a game room and clears corresponding timers.
+ * @param {String} gameId Id from the game that just finished.
+ * @param {String} player1 Username of the first player.
+ * @param {String} player2 Username of the second player.
+ * @param {Object} resultData Object containing {result, winner}.
+ */
+const gameOver = (gameId, player1, player2, resultData) => {
+	/* Emits gameOver event to the game room */
 	io.to(gameId).emit('gameOver', resultData);
-	/* Stop time counting for both players */
-	if (timers[username+gameId].loop) {
-		clearInterval(timers[username+gameId].loop);
-		timers[username+gameId].loop = null;
+	/* Stops time counting for both players */
+	if (timers[player1+gameId].loop) {
+		clearInterval(timers[player1+gameId].loop);
+		timers[player1+gameId].loop = null;
 	}
-	if (timers[opponent+gameId].loop) {
-		clearInterval(timers[opponent+gameId].loop);
-		timers[opponent+gameId].loop = null;
+	if (timers[player2+gameId].loop) {
+		clearInterval(timers[player2+gameId].loop);
+		timers[player2+gameId].loop = null;
 	}
-	/* Stop time sync for the game room */
-	if (games[gameId].timesync)
-		clearInterval(games[gameId].timesync);
+	/* Stops time sync for the game room */
+	if (timesync[gameId])
+		clearInterval(timesync[gameId]);
 }
+
+const createGame = async (game) => {
+	const result = await gameCollection.insertOne(game);
+	return {...game, ...{_id: result.insertedId}};
+}
+
+const getGame = async (gameId) => {
+	return await gameCollection.findOne({_id: new ObjectId(gameId)});
+}
+
+const updateGame = async (gameId, update) => {
+	const result = await gameCollection.findOneAndUpdate(
+		{_id: new ObjectId(gameId)},
+		{$set: update},
+		{returnOriginal: false}
+	);
+	return result.value;
+}
+
+/**
+ * Socket.io event handling
+ * 
+ */
 
 io.on('connection', (socket) => {
 
@@ -88,14 +131,14 @@ io.on('connection', (socket) => {
 
 			if (!data.username) {
 
-				/* Generate username */
+				/* Generates username */
 				const username = utils.random_username();
 	
 				/* New user joins a private room and the username is emitted back */
 				socket.join(username+socket.id);
 				socket.emit('username', {username});
 	
-				/* Save user in memory */
+				/* Saves user in memory */
 				users[socket.id] = username;
 				sockets[username] = socket.id;
 	
@@ -107,19 +150,19 @@ io.on('connection', (socket) => {
 	
 			} else {
 	
-				/* Set username */
+				/* Sets username */
 				const username = data.username;
 	
 				/* User joins a private room again */
 				socket.join(username+socket.id);
 	
-				/* Update user in memory */
+				/* Updates user in memory */
 				users[socket.id] = username;
 				sockets[username] = socket.id;
 
 				/* Reconnects the user to the game */
-				if (gameIds[username]) {
-					const gameId = gameIds[username];
+				if (currentGameId[username]) {
+					const gameId = currentGameId[username];
 					socket.join(gameId);
 				}
 	
@@ -140,15 +183,17 @@ io.on('connection', (socket) => {
 
 		try {
 
-			/* Remove user from memory */
+			/* Gets username based on socket id */
 			const username = users[socket.id];
+
+			/* Removes user from memory */
 			delete users[socket.id];
 			delete sockets[username];
 
 			/* User leaves all rooms */
 			socket.leaveAll();
 
-			/* Log the event */
+			/* Event is logged */
 			logger.log({
 				level: 'info',
 				message: `User disconnected: ${username}`
@@ -160,12 +205,19 @@ io.on('connection', (socket) => {
 		}
 	});
 
-	socket.on('getGames', async (data) => {
+	socket.on('getGames', async () => {
 
-		const username = users[socket.id];
-		socket.emit('gamesList', {
-			games: activeGames.filter(g => g.username !== username)
-		});
+		try {
+
+			const username = users[socket.id];
+			socket.emit('gamesList', {
+				games: joinableGames.filter(g => g.host !== username)
+			});
+
+		} catch (error) {
+
+			console.log(error);
+		}
 
 	});
 
@@ -173,80 +225,118 @@ io.on('connection', (socket) => {
 
 		try {
 
-			/* Define a game */
+			/* Defines a game */
 			const random = Math.random();
 			const orientation = random < 0.5 ? 'white' : 'black';
 			const username = users[socket.id];
-			const game = {
-				whiteUsername: orientation === 'white' ? username : null,
-				blackUsername: orientation === 'black' ? username : null,
-				timeControl: data.timeControl,
-				fen: null,
-				lastMove: null
+
+			// let game = {
+			// 	whiteUsername: orientation === 'white' ? username : null,
+			// 	blackUsername: orientation === 'black' ? username : null,
+			// 	timeControl: data.timeControl,
+			// 	fen: null,
+			// 	lastMove: null,
+			// 	pgn: new chessjs.Chess().pgn(),
+			// 	started: false
+			// }
+
+			let game = {
+				host: username,
+				guest: null,
+				players: {
+					white: {
+						username: orientation === 'white' ? username : null
+					},
+					black: {
+						username: orientation === 'black' ? username : null
+					}
+				},
+				timeControl: {
+					minutes: parseInt(data.timeControl.split('+')[0]),
+					increment: parseInt(data.timeControl.split('+')[1]),
+					string: data.timeControl
+				},
+				state: {
+					fen: new chessjs.Chess().fen(),
+					joinable: true,
+					started: false,
+					lastMove: null
+				},
+				history: {
+					pgn: new chessjs.Chess().pgn()
+				}
 			}
 
-			/* Create a game */
-			const gameCollection = mongo.db('neochessdb').collection('games_test');
-			const result = await gameCollection.insertOne(game);
-			const gameId = result.insertedId
+			/* Creates a game */
+			game = await createGame(game);
+			const gameId = game._id;
 
-			games[gameId] = {
-				game: new chessjs.Chess(),
-				timesync: null
-			}
+			timesync[gameId] = null;
 
-			/* Generate game parameters */
+			/* Generates game parameters */
 			const params = {
 				gameId,
 				orientation,
 				username,
 				opponent: null,
-				timeControl: data.timeControl,
-				fen: null,
-				lastMove: null
+				timeControl: game.timeControl.string,
+				fen: game.state.fen,
+				lastMove: game.state.lastMove
 			};
 
 			/* User leaves previous game */
-			socket.leave(gameIds[username]);
-			if (timers[username+params.gameId]) {
-				if (timers[username+params.gameId].loop){
+			socket.leave(currentGameId[username]);
+			if (timers[username+gameId]) {
+				if (timers[username+gameId].loop){
 					clearInterval(timers[username+gameId].loop);
-					timers[username+params.gameId].loop = null;
+					timers[username+gameId].loop = null;
 				}
 			}
 
 			/* User joins the new game room */
-			socket.join(params.gameId);
-			gameIds[username] = params.gameId;
+			socket.join(gameId);
+			currentGameId[username] = gameId;
 
 			/* Game parameters are emitted to the user */
-			io.to(params.gameId).emit('gameCreated', {game: {params}});
+			io.to(gameId).emit('gameCreated', {game: {params}});
 
-			timers[username+params.gameId] = {
+			/* A timer is assigned to the user for this game */
+			timers[username+gameId] = {
 				loop: null,
 				time: seconds[params.timeControl]
 			};
 
-			/* Save game to active games in memory */
-			activeGames.push(
-				{username, timeControl: params.timeControl, gameId: params.gameId},
+			/* Set game as joinable */
+			joinableGames.push({
+				host: username,
+				timeControl: params.timeControl,
+				gameId: gameId},
 			);
 
-			io.emit('gamesList', {games: activeGames});
+			/**
+			 * Broadcasts the updated list of joinable games.
+			 * TODO: It's better to emit user-specific joinable games, to avoid frontend
+			 * filtering. After all, a user should not join a game against himself.
+			 */
+			io.emit('gamesList', {games: joinableGames});
 
-			/* Log the event */
-			const loginfo = {game};
+			/* Event is logged */
+			const loginfo = {
+				gameId,
+				host: game.host, 
+				timeControl: game.timeControl.string
+			};
 			logger.log({
 				level: 'info',
-				message: `New game ${log.dict2log(loginfo)}`
+				message: `Game created ${log.dict2log(loginfo)}`
 			});
 
-			/* Just to be safe, return */
+			/* Just to be safe, returns */
 			return;
 
 		} catch (error) {
 
-			/* Log the error, emit error */
+			/* Logs the error, emits the error */
 			console.log(error);
 			socket.emit('gameCreated', {
 				error: {
@@ -257,10 +347,6 @@ io.on('connection', (socket) => {
 
 			return;
 
-		} finally {
-
-			// /* Close MongoDB instance */
-			// await mongo.close();
 		}
 	});
 
@@ -268,20 +354,18 @@ io.on('connection', (socket) => {
 
 		try {
 
-			/* Get id from the game to be joined */
+			/* Gets id from the game to be joined */
 			const { gameId } = data;
 
-			/* Get username */
+			/* Gets username */
 			const username = users[socket.id];
 
-			/* Search for the game using gameId */
-			const gameCollection = mongo.db('neochessdb').collection('games_test');
-			let game = await gameCollection.findOne({_id: new ObjectId(gameId)});
+			/* Searches for the game using gameId */
+			let game = await getGame(gameId);
 
-			if (game.whiteUsername && game.blackUsername ||
-				(game.whiteUsername === username || game.blackUsername === username) ) {
+			if (!game.state.joinable || game.host === username) {
 
-				/* Return COULD_NOT_JOIN error */
+				/* Returns COULD_NOT_JOIN error */
 				io.to(socket.id).emit('gameJoined', {
 					error: {
 						code: 'COULD_NOT_JOIN',
@@ -289,10 +373,11 @@ io.on('connection', (socket) => {
 					}
 				});
 
-				/* Log the event */
+				/* Event is logged */
 				const loginfo = {
 					username, gameId,
-					white: game.whiteUsername, black: game.blackUsername
+					white: game.players.white.username,
+					black: game.players.black.username
 				};
 				logger.log({
 					level: 'info',
@@ -302,32 +387,28 @@ io.on('connection', (socket) => {
 				return;
 			}
 
-			/* Define new player orientation and opponent */
-			const orientation = game.whiteUsername ? 'black' : 'white';
-			const opponentOrientation = game.whiteUsername ? 'white' : 'black';
+			/* Defines new player orientation and opponent */
+			const orientation = game.players.white.username ? 'black' : 'white';
+			const opponentOrientation = orientation === 'black' ? 'white' : 'black';
 
-			/* Generate info to update the game in the database
-			** Also define opponent */
+			/**
+			 * Generates info to update the game in the database
+			 * Also defines opponent
+			 */
 			let update;
 			let opponent;
 			if (orientation === 'white') {
-				update = {whiteUsername: username};
-				opponent = game.blackUsername;
+				update = {'players.white.username': username};
+				opponent = game.players.black.username;
 			} 
 			else if (orientation === 'black') {
-				update = {blackUsername: username};
-				opponent = game.whiteUsername;
+				update = {'players.black.username': username};
+				opponent = game.players.white.username;
 			}
+			update.guest = username;
 
-			/* Update the game in the database */
-			const result = await gameCollection.findOneAndUpdate(
-				{_id: new ObjectId(gameId)},
-				{$set: update},
-				{returnOriginal: false}
-			);
-
-			/* Get updated game */
-			game = result.value;
+			/* Updates the game in the database */
+			game = await updateGame(gameId, update);
 
 			/* Generate game parameters */
 			const params = {
@@ -335,19 +416,19 @@ io.on('connection', (socket) => {
 				orientation,
 				username,
 				opponent,
-				timeControl: game.timeControl,
-				fen: game.fen,
-				lastMove: game.lastMove
+				timeControl: game.timeControl.string,
+				fen: game.state.fen,
+				lastMove: game.state.lastMove
 			};
 
 			/* User joins the game room */
-			socket.join(params.gameId);
-			gameIds[username] = params.gameId;
+			socket.join(gameId);
+			currentGameId[username] = gameId;
 
 			/* Game parameters are emitted to the user */
 			io.to(socket.id).emit('gameJoined', {game: {params}});
 
-			/* Emit update game signal to opponent */
+			/* Emits update game event to opponent */
 			io.to(opponent+sockets[opponent]).emit('updateGame', {
 				game: {
 					params: {
@@ -355,44 +436,55 @@ io.on('connection', (socket) => {
 						orientation: opponentOrientation,
 						username: opponent,
 						opponent: username,
-						fen: game.fen,
-						lastMove: game.lastMove
+						fen: game.state.fen,
+						lastMove: game.state.lastMove
 					}
 				}
 			});
 
+			/* A timer is assigned to the joining user for this game */
 			timers[username+gameId] = {
 				loop: null,
 				time: seconds[params.timeControl]
 			};
 
-			games[gameId].timesync = setInterval(() => {
-				/* Emit time sync signals */
+			/* Starts emittings timesync events */
+			timesync[gameId] = setInterval(() => {
 				let sync = {};
-				const whiteUsername = game.whiteUsername;
-				const blackUsername = game.blackUsername;
+				const whiteUsername = game.players.white.username;
+				const blackUsername = game.players.black.username;
 				sync.gameId = gameId;
 				sync[whiteUsername] = timers[whiteUsername+gameId].time;
 				sync[blackUsername] = timers[blackUsername+gameId].time;
-				io.to(params.gameId).emit('timesync', sync);
+				io.to(gameId).emit('timesync', sync);
 			}, 500);
 
-			/* If join game, game is not active to join anymore */
-			activeGames = activeGames.filter(g => g.gameId.toString() != gameId);
-			io.emit('gamesList', {games: activeGames});
+			/* If game is joined, removes it from array of joinable games */
+			joinableGames = joinableGames.filter(g => g.gameId.toString() != gameId);
 
-			/* Log the event */
-			const loginfo = {game};
+			/**
+			 * Broadcasts the updated list of joinable games.
+			 * TODO: It's better to emit user-specific joinable games, to avoid frontend
+			 * filtering. After all, a user should not join a game against himself.
+			 */
+			io.emit('gamesList', {games: joinableGames});
+
+			/* Event is logged */
+			const loginfo = {
+				gameId,
+				host: game.host, guest: game.guest,
+				timeControl: game.timeControl.string
+			};
 			logger.log({
 				level: 'info',
-				message: `Join game ${log.dict2log(loginfo)}`
+				message: `Game joined ${log.dict2log(loginfo)}`
 			});
 
 			return;
 
 		} catch (error) {
 
-			/* Log the error, emit error */
+			/* Logs the error, emits the error */
 			console.log(error);
 			socket.emit('gameJoined', {
 				error: {
@@ -403,10 +495,6 @@ io.on('connection', (socket) => {
 
 			return;
 
-		} finally {
-
-			// /* Close MongoDB instance */
-			// await mongo.close();
 		}
 	});
 
@@ -414,161 +502,145 @@ io.on('connection', (socket) => {
 
 		try {
 
-			/* Get gameId, fen and move */
+			/* Gets gameId, fen and move from movedata*/
 			const { username, gameId, fen, move } = movedata;
 
-			/* Update game representation in memory */
-			games[gameId].game.move(move);
+			let game = await getGame(gameId);
 
-			/* Search for the game using gameId */
-			const gameCollection = mongo.db('neochessdb').collection('games_test');
+			/* Generates a game representation */
+			let gameRepresentation = new chessjs.Chess();
+			gameRepresentation.load_pgn(game.history.pgn);
+			gameRepresentation.move(move);
 
-			/* Update the game */
-			const update = { fen, lastMove: move, pgn: games[gameId].game.pgn() };
-			const result = await gameCollection.findOneAndUpdate(
-				{_id: new ObjectId(gameId)},
-				{$set: update},
-				{returnOriginal: false}
-			);
+			/* Updates the game */
+			const update = {
+				'state.fen': gameRepresentation.fen(),
+				'state.lastMove': move,
+				'history.pgn': gameRepresentation.pgn()
+			};
+			game = await updateGame(gameId, update);
 
-			/* Get updated game */
-			const game = result.value;
-
-			/* Log the event */
+			/* Logs the event */
 			const logdata = { username, gameId, move };
 			logger.log({
 				level: 'info',
 				message: `New move ${log.dict2log(logdata)}`
 			});
 
-			/* TODO: This could be improved. I believe only one socket signal needs to
-			** emitted. Keeping this way for now to avoid breaking other functions */
+			/* TODO: The following could be improved. I believe only one event needs to
+			** be emitted. Keeping this way for now to avoid breaking other functions */
 
-			const blackUsername = game.blackUsername;
-			const whiteUsername = game.whiteUsername;
+			const blackUsername = game.players.black.username;
+			const whiteUsername = game.players.white.username;
 			const opponent = username === whiteUsername ? blackUsername : whiteUsername;
 			const orientation = username === whiteUsername ? 'white' : 'black';
 
-			/* Emit move to the game room */
+			/* Emits move to the game room */
 			io.to(gameId).emit('moved', movedata);
 
-			/* Stop decreasing player's time */
+			/* Stops the player's timer */
 			if (timers[username+gameId].loop) {
 				clearInterval(timers[username+gameId].loop);
 				timers[username+gameId].loop = null;
 			}
 
-			/* Start timers after black plays first move */
-			if (orientation === 'black' || timerStarted[gameId]) {
-				/* Start decreasing opponent's time */
+			/* Starts timers only after black plays its first move */
+			if (orientation === 'black' || game.started) {
+				/* Starts opponent's timer */
 				timers[opponent+gameId] = {
-					loop: setInterval(() => {
+					loop: setInterval(async () => {
 						const t = timers[opponent+gameId].time;
 						timers[opponent+gameId].time = Math.max(-1, t - 1);
 						if(timers[opponent+gameId].time <= -1) {
 							/* TODO: draw if player has insufficient material
 							** For now, if the time is over, the other player wins...
 							*/
-							const result = 'ontime';
-							let winner = username;
-
-							gameOver(gameId, username, opponent, {
-								result,
-								winner
-							});
+							const resultData = {
+								result: 'ontime',
+								winner: username
+							};
+							gameOver(gameId, username, opponent, resultData);
 						};
-						
 					}, 1000),
 					time: timers[opponent+gameId].time
 				};
-				timerStarted[gameId] = true;
+				/* Game is set as started only after black plays */
+				game = await updateGame(gameId, {started: true});
 			}
 
-			/* Emit update game signal to black */
+			/* Emits updateGame event to black */
 			io.to(blackUsername+sockets[blackUsername]).emit('updateGame', {
 				game: {
 					params: {
-						gameId: game._id,
+						gameId: gameId,
 						orientation: 'black',
 						username: blackUsername,
 						opponent: whiteUsername,
-						fen: game.fen,
-						lastMove: game.lastMove
+						fen: game.state.fen,
+						lastMove: game.state.lastMove
 					}
 				}
 			});
 
-			/* Emit update game signal to white */
+			/* Emits updateGame event to white */
 			io.to(whiteUsername+sockets[whiteUsername]).emit('updateGame', {
 				game: {
 					params: {
-						gameId: game._id,
+						gameId: gameId,
 						orientation: 'white',
 						username: whiteUsername,
 						opponent: blackUsername,
-						fen: game.fen,
-						lastMove: game.lastMove
+						fen: game.state.fen,
+						lastMove: game.state.lastMove
 					}
 				}
 			});
 
-			/* Log the game is ascii */
-			console.log(games[gameId].game.ascii());
+			/* Logs the game is ascii */
+			console.log(gameRepresentation.ascii());
 
-			/* Detect if game is over and determine the result */
-			if (games[gameId].game.game_over()) {
+			/* Detects if the game is over and determines the result */
+			if (gameRepresentation.game_over()) {
 
 				let result;
 				let winner = null;
 
-				if (games[gameId].game.in_checkmate()) {
+				if (gameRepresentation.in_checkmate()) {
 
 					result = 'checkmate';
 					winner = username
 
 				} else {
 
-					if (games[gameId].game.in_draw()) {
-						if (games[gameId].game.in_stalemate())
+					if (gameRepresentation.in_draw()) {
+						if (gameRepresentation.in_stalemate())
 							result = 'draw.stalemate';
-						else if (games[gameId].game.in_threefold_repetition())
+						else if (gameRepresentation.in_threefold_repetition())
 							result = 'draw.threefold_repetition';
-						else if (games[gameId].game.insufficient_material())
+						else if (gameRepresentation.insufficient_material())
 							result = 'draw.insufficient_material';
 					}
 				}
 
-				gameOver(gameId, username, opponent, {
-					result,
-					winner
-				});
+				const resultData = {result, winner};
+				gameOver(gameId, username, opponent, resultData);
 			}
 
 			return;
 
 		} catch (error) {
 
-			/* Log the error, emit error */
+			/* Logs the error */
 			console.log(error);
-			socket.emit('newGame', {
-				error: {
-					code: 'INTERNAL_SERVER_ERROR',
-					message: 'internal server error'
-				}
-			});
 
-		} finally {
-
-			// /* Close MongoDB instance */
-			// await mongo.close();
 		}
 	});
 });
 
-/* start the server */
+/* Starts the server */
 server.listen(port, () => {
 	logger.log({
 		level: 'info',
-		message: `Neochess server is online at port ${port}`
+		message: `Online at port ${port}`
 	});
 });

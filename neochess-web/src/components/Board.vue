@@ -124,10 +124,10 @@ export default {
 						dests: this.possibleMoves(),
 						events: { after: this.playerMove()},
 					},
-					lastMove: [
-						this.$store.state.game.params.lastMove.from,
-						this.$store.state.game.params.lastMove.to
-					]
+					lastMove: this.$store.state.game.params.lastMove ? [
+							this.$store.state.game.params.lastMove.from,
+							this.$store.state.game.params.lastMove.to
+					] : null
 				});
 			}
 		}
@@ -143,10 +143,10 @@ export default {
 						dests: this.possibleMoves(),
 						events: { after: this.playerMove()},
 					},
-					lastMove: [
-						this.$store.state.game.params.lastMove.from,
-						this.$store.state.game.params.lastMove.to
-					]
+					lastMove: this.$store.state.game.params.lastMove ? [
+							this.$store.state.game.params.lastMove.from,
+							this.$store.state.game.params.lastMove.to
+					] : null
 				});
 			}
 		}

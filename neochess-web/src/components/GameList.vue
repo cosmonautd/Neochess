@@ -13,7 +13,7 @@
 		</thead> -->
 		<tbody>
 			<tr v-for="game in games" :key="game.gameId">
-				<td class="left-round-corners">{{ game.username }}</td>
+				<td class="left-round-corners">{{ game.host }}</td>
 				<td>{{ game.timeControl }}</td>
 				<td class="right-round-corners">
 					<button @click="joinGame(game.gameId)" class="round-corners">
