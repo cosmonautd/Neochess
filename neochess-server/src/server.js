@@ -134,8 +134,7 @@ io.on('connection', (socket) => {
 				/* Generates username */
 				const username = utils.random_username();
 	
-				/* New user joins a private room and the username is emitted back */
-				socket.join(username+socket.id);
+				/* Username is emitted back */
 				socket.emit('username', {username});
 	
 				/* Saves user in memory */
@@ -153,9 +152,6 @@ io.on('connection', (socket) => {
 				/* Sets username */
 				const username = data.username;
 	
-				/* User joins a private room again */
-				socket.join(username+socket.id);
-	
 				/* Updates user in memory */
 				users[socket.id] = username;
 				sockets[username] = socket.id;
@@ -163,6 +159,7 @@ io.on('connection', (socket) => {
 				/* Reconnects the user to the game */
 				if (currentGameId[username]) {
 					const gameId = currentGameId[username];
+					socket.join(username+socket.id+gameId);
 					socket.join(gameId);
 				}
 	
@@ -285,16 +282,15 @@ io.on('connection', (socket) => {
 			};
 
 			/* User leaves previous game */
-			socket.leave(currentGameId[username]);
-			if (timers[username+gameId]) {
-				if (timers[username+gameId].loop){
-					clearInterval(timers[username+gameId].loop);
-					timers[username+gameId].loop = null;
-				}
+			const previousGameId = currentGameId[username];
+			if (previousGameId) {
+				socket.leave(previousGameId);
+				socket.leave(username+sockets[username]+previousGameId);
 			}
 
 			/* User joins the new game room */
 			socket.join(gameId);
+			socket.join(username+socket.id+gameId);
 			currentGameId[username] = gameId;
 
 			/* Game parameters are emitted to the user */
@@ -421,15 +417,23 @@ io.on('connection', (socket) => {
 				lastMove: game.state.lastMove
 			};
 
+			/* User leaves previous game */
+			const previousGameId = currentGameId[username];
+			if (previousGameId) {
+				socket.leave(previousGameId);
+				socket.leave(username+sockets[username]+previousGameId);
+			}
+
 			/* User joins the game room */
 			socket.join(gameId);
+			socket.join(username+socket.id+gameId);
 			currentGameId[username] = gameId;
 
 			/* Game parameters are emitted to the user */
 			io.to(socket.id).emit('gameJoined', {game: {params}});
 
 			/* Emits update game event to opponent */
-			io.to(opponent+sockets[opponent]).emit('updateGame', {
+			io.to(opponent+sockets[opponent]+gameId).emit('updateGame', {
 				game: {
 					params: {
 						gameId: game._id,
@@ -569,7 +573,7 @@ io.on('connection', (socket) => {
 			}
 
 			/* Emits updateGame event to black */
-			io.to(blackUsername+sockets[blackUsername]).emit('updateGame', {
+			io.to(blackUsername+sockets[blackUsername]+gameId).emit('updateGame', {
 				game: {
 					params: {
 						gameId: gameId,
@@ -583,7 +587,7 @@ io.on('connection', (socket) => {
 			});
 
 			/* Emits updateGame event to white */
-			io.to(whiteUsername+sockets[whiteUsername]).emit('updateGame', {
+			io.to(whiteUsername+sockets[whiteUsername]+gameId).emit('updateGame', {
 				game: {
 					params: {
 						gameId: gameId,

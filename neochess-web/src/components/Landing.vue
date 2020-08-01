@@ -66,7 +66,9 @@ export default {
 		},
 		go_to_new_game(game) {
 			this.$store.commit('update_game', game);
-			this.$router.push({ name: 'game', params: {gameId: game.params.gameId}});
+			this.$router.push({ name: 'game', params: {
+				gameId: this.$store.state.game.params.gameId
+			}});
 		}
 	},
 	sockets: {
