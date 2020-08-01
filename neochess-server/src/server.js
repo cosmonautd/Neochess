@@ -83,7 +83,7 @@ const seconds = {
  * @param {String} player2 Username of the second player.
  * @param {Object} resultData Object containing {result, winner}.
  */
-const gameOver = (gameId, player1, player2, resultData) => {
+const gameOver = async (gameId, player1, player2, resultData) => {
 	/* Emits gameOver event to the game room */
 	io.to(gameId).emit('gameOver', resultData);
 	/* Stops time counting for both players */
@@ -98,6 +98,31 @@ const gameOver = (gameId, player1, player2, resultData) => {
 	/* Stops time sync for the game room */
 	if (timesync[gameId])
 		clearInterval(timesync[gameId]);
+	
+	/* Game is set as finished */
+	await updateGame(gameId, {
+		'state.finished': true,
+		'result.description': resultData.result,
+		'result.winner': resultData.winner
+	});
+}
+
+const gameTimeSync = (gameId, whiteUsername, blackUsername) => {
+	let sync = {};
+	sync.gameId = gameId;
+	sync[whiteUsername] = Math.max(0, timers[whiteUsername+gameId].time);
+	sync[blackUsername] = Math.max(0, timers[blackUsername+gameId].time);
+	io.to(gameId).emit('timesync', sync);
+}
+
+const userTimeSync = (username, whiteUsername, blackUsername) => {
+	let sync = {};
+	const gameId = currentGameId[username];
+	sync.gameId = gameId;
+	sync[whiteUsername] = Math.max(0, timers[whiteUsername+gameId].time);
+	sync[blackUsername] = Math.max(0, timers[blackUsername+gameId].time);
+	console.log(sync)
+	io.to(username+sockets[username]+gameId).emit('timesync', sync);
 }
 
 const createGame = async (game) => {
@@ -125,7 +150,7 @@ const updateGame = async (gameId, update) => {
 
 io.on('connection', (socket) => {
 
-	socket.on('username', function (data) {
+	socket.on('username', async (data) => {
 
 		try {
 
@@ -156,11 +181,29 @@ io.on('connection', (socket) => {
 				users[socket.id] = username;
 				sockets[username] = socket.id;
 
-				/* Reconnects the user to the game */
+				/* If user was connected to a game before... */
 				if (currentGameId[username]) {
+
+					/* Reconnects the user to the game */
 					const gameId = currentGameId[username];
-					socket.join(username+socket.id+gameId);
 					socket.join(gameId);
+					socket.join(username+socket.id+gameId);
+
+					const game = await getGame(gameId);
+
+					/* If game was finished while user was offline... */
+					if (game.state.finished) {
+						/* Emits gameOver event to the user */
+						const resultData = {
+							result: game.result.description,
+							winner: game.result.winner
+						};
+						io.to(username+socket.id+gameId).emit('gameOver', resultData);
+						/* Emits the last state of the timers */
+						const whiteUsername = game.players.white.username;
+						const blackUsername = game.players.black.username;
+						userTimeSync(username, whiteUsername, blackUsername);
+					}
 				}
 	
 				/* Event is logged */
@@ -176,7 +219,7 @@ io.on('connection', (socket) => {
 		}
 	});
 
-	socket.on('disconnect', function (reason) {
+	socket.on('disconnect', (reason) => {
 
 		try {
 
@@ -257,10 +300,15 @@ io.on('connection', (socket) => {
 					fen: new chessjs.Chess().fen(),
 					joinable: true,
 					started: false,
+					finished: false,
 					lastMove: null
 				},
 				history: {
 					pgn: new chessjs.Chess().pgn()
+				},
+				result: {
+					description: null,
+					winner: null
 				}
 			}
 
@@ -359,7 +407,7 @@ io.on('connection', (socket) => {
 			/* Searches for the game using gameId */
 			let game = await getGame(gameId);
 
-			if (!game.state.joinable || game.host === username) {
+			if (!game.state.joinable || game.state.finished || game.host === username) {
 
 				/* Returns COULD_NOT_JOIN error */
 				io.to(socket.id).emit('gameJoined', {
@@ -401,7 +449,8 @@ io.on('connection', (socket) => {
 				update = {'players.black.username': username};
 				opponent = game.players.white.username;
 			}
-			update.guest = username;
+			update['guest'] = username;
+			update['state.joinable'] = false;
 
 			/* Updates the game in the database */
 			game = await updateGame(gameId, update);
@@ -454,13 +503,9 @@ io.on('connection', (socket) => {
 
 			/* Starts emittings timesync events */
 			timesync[gameId] = setInterval(() => {
-				let sync = {};
 				const whiteUsername = game.players.white.username;
 				const blackUsername = game.players.black.username;
-				sync.gameId = gameId;
-				sync[whiteUsername] = timers[whiteUsername+gameId].time;
-				sync[blackUsername] = timers[blackUsername+gameId].time;
-				io.to(gameId).emit('timesync', sync);
+				gameTimeSync(gameId, whiteUsername, blackUsername);
 			}, 500);
 
 			/* If game is joined, removes it from array of joinable games */
@@ -511,6 +556,8 @@ io.on('connection', (socket) => {
 
 			let game = await getGame(gameId);
 
+			if (game.state.finished) return;
+
 			/* Generates a game representation */
 			let gameRepresentation = new chessjs.Chess();
 			gameRepresentation.load_pgn(game.history.pgn);
@@ -549,7 +596,7 @@ io.on('connection', (socket) => {
 			}
 
 			/* Starts timers only after black plays its first move */
-			if (orientation === 'black' || game.started) {
+			if (orientation === 'black' || game.state.started) {
 				/* Starts opponent's timer */
 				timers[opponent+gameId] = {
 					loop: setInterval(async () => {
@@ -563,13 +610,13 @@ io.on('connection', (socket) => {
 								result: 'ontime',
 								winner: username
 							};
-							gameOver(gameId, username, opponent, resultData);
+							await gameOver(gameId, username, opponent, resultData);
 						};
 					}, 1000),
 					time: timers[opponent+gameId].time
 				};
 				/* Game is set as started only after black plays */
-				game = await updateGame(gameId, {started: true});
+				game = await updateGame(gameId, {'state.started': true});
 			}
 
 			/* Emits updateGame event to black */
@@ -627,7 +674,8 @@ io.on('connection', (socket) => {
 				}
 
 				const resultData = {result, winner};
-				gameOver(gameId, username, opponent, resultData);
+				await gameOver(gameId, username, opponent, resultData);
+				/* TODO: Change resultData schema */
 			}
 
 			return;
