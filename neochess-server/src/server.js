@@ -42,7 +42,7 @@ const mongo = new MongoClient(process.env.NEOCHESS_DB_URI, {
 /* Connect to MongoDB */
 let gameCollection;
 mongo.connect().then(() => {
-	gameCollection = mongo.db('neochessdb').collection('games_test');
+	gameCollection = mongo.db(process.env.NEOCHESS_DB).collection('games');
 	logger.log({
 		level: 'info',
 		message: `Connected to MongoDB Cloud`
