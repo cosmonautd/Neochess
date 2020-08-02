@@ -62,4 +62,19 @@ p {
 .round-corners {
 	border-radius: 15px 15px 15px 15px;
 }
+.vertical-spacing-1 {
+	height: 1em;
+}
+.vertical-spacing-2 {
+	height: 2em;
+}
+.vertical-spacing-3 {
+	height: 3em;
+}
+.vertical-spacing-4 {
+	height: 4em;
+}
+.vertical-spacing-8 {
+	height: 8em;
+}
 </style>

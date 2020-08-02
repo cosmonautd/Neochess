@@ -1,18 +1,35 @@
 <template>
 <div id="neochess-timer">
-	<div>
-		<div class="neochess-time round-corners">{{opponentTime}}</div>
-		<div class="neochess-username">{{opponent}}</div>
+	<div v-if="this.$vssWidth >= 576">
+		<div>
+			<div class="neochess-time round-corners">{{opponentTime}}</div>
+			<div class="neochess-username">{{opponent}}</div>
+		</div>
+		<div class="vertical-spacing"></div>
+		<div>
+			<div class="neochess-username">{{username}}</div>
+			<div class="neochess-time round-corners">{{userTime}}</div>
+		</div>
 	</div>
-	<div class="vertical-spacing"></div>
-	<div>
-		<div class="neochess-username">{{username}}</div>
-		<div class="neochess-time round-corners">{{userTime}}</div>
+	<div v-else>
+		<b-container fluid class="bv-example-row">
+			<b-row align-h="center">
+				<b-col >
+					<div class="neochess-time round-corners">{{opponentTime}}</div>
+					<div class="neochess-username">{{opponent}}</div>
+				</b-col>
+				<b-col >
+					<div class="neochess-time round-corners">{{userTime}}</div>
+					<div class="neochess-username">{{username}}</div>
+				</b-col>
+			</b-row>
+		</b-container>
 	</div>
 </div>
 </template>
 
 <script>
+import VueScreenSize from 'vue-screen-size'
 export default {
 	name: "neochess-timer",
 	props: {
@@ -58,6 +75,7 @@ export default {
 			},
 		}
 	},
+	mixins: [VueScreenSize.VueScreenSizeMixin],
 }
 </script>
 
@@ -71,5 +89,16 @@ export default {
 }
 .neochess-username {
 	font-size: x-large;
+}
+@media screen and (max-width: 575px) {
+    .vertical-spacing {
+		height: 1em;
+	}
+	.neochess-time {
+		font-size: small;
+	}
+	.neochess-username {
+		font-size: small;
+	}
 }
 </style>

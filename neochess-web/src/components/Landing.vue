@@ -1,7 +1,7 @@
 <template>
 <div id="neochess-landing">
 	<div class="container-fluid">
-		<div class="vertical-spacing-1"/>
+		<div class="vertical-spacing-top"/>
 		<h1 class="neochess-title">neochess</h1>
 		<p>
 			<span>You are connected as </span>
@@ -9,6 +9,7 @@
 		</p>
 		<div class="vertical-spacing-3"/>
 		<p class="neochess-title"> Start a game </p>
+		<div class="vertical-spacing-1"/>
 		<div>
 			<button @click="newGame('1+0')" class="round-corners time-control-button">
 				1+0
@@ -33,6 +34,7 @@
 		</div>
 		<div class="vertical-spacing-3"></div>
 		<p class="neochess-title"> Choose a game </p>
+		<div class="vertical-spacing-1"/>
 		<GameList
 			:games="games"
 		/>
@@ -110,21 +112,6 @@ export default {
 </script>
 
 <style scoped>
-.vertical-spacing-1 {
-	height: 1em;
-}
-.vertical-spacing-2 {
-	height: 2em;
-}
-.vertical-spacing-3 {
-	height: 3em;
-}
-.vertical-spacing-4 {
-	height: 4em;
-}
-.vertical-spacing-8 {
-	height: 8em;
-}
 h1 {
 	color: white
 }
@@ -132,5 +119,12 @@ h1 {
 	margin: 1em;
 	width: 5em;
 	height: 5em;
+}
+@media screen and (max-width: 575px) {
+    .time-control-button {
+		margin: 0.5em;
+		width: 5em;
+		height: 5em;
+	}
 }
 </style>

@@ -4,15 +4,20 @@
 		<b-container fluid class="bv-example-row">
 			<b-row align-h="center">
 				<b-col align-self="center">
-					<p :style="{visibility:show_share_message}">
+					<p v-if="this.$vssWidth < 576" class="responsive-font">
+						<span>You are connected as </span>
+						<span class="neochess-title">{{ this.$store.state.username }}</span>
+					</p>
+					<p :style="{visibility:show_share_message}" class="responsive-font">
 						Share the link of this page with a friend to start playing
+						or wait for someone to join
 					</p>
 					<div class='timer spacing-top'>
 						<Timer/>
 					</div>
 				</b-col>
 				<b-col sm="12" md="12" lg="9" xl="9">
-					<p>
+					<p v-if="this.$vssWidth >= 576" class="responsive-font">
 						<span>You are connected as </span>
 						<span class="neochess-title">{{ this.$store.state.username }}</span>
 					</p>
@@ -32,7 +37,7 @@
 	<div v-else>
 		<p class="neochess-title">{{status.message}}</p>
 	</div>
-	<modal name="game-over-modal">
+	<modal name="game-over-modal" width="80%" :maxWidth="300" :adaptive="true">
 		<div class="neochess-modal">
 			<b-container fluid class="bv-example-row">
 				<b-row align-h="center" class="neochess-row">
@@ -135,7 +140,7 @@ export default {
 		compute_board_size() {
 			const w = this.$vssWidth;
 			const h = this.$vssHeight;
-			const size = w < h ? 0.9*w : 0.8*h;
+			const size = w < h ? 0.85*w : 0.8*h;
 			return size.toString();
 		},
 		refresh(event) {
@@ -203,12 +208,15 @@ export default {
 	width: 100%;
 	height: auto;
 }
-/* @media screen and (max-width: 991px) {
-    .timer {
-        width: 85%;
-    }
-} */
 .neochess-row {
 	height: 100%;
+}
+.responsive-font {
+	font-size: inherit;
+}
+@media screen and (max-width: 575px) {
+    .responsive-font {
+		font-size: small;
+	}
 }
 </style>
