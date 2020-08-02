@@ -9,22 +9,24 @@
 							<h1 class="neochess-title">neochess</h1>
 						</a>
 					</b-row>
+					<div v-if="this.$vssWidth < 992" class="responsive-font">
+						<span>You are connected as </span>
+						<span class="neochess-title">{{ this.$store.state.username }}</span>
+					</div>
 					<b-row align-h="center">
-						<p v-if="this.$vssWidth < 576" class="responsive-font">
-							<span>You are connected as </span>
-							<span class="neochess-title">{{ this.$store.state.username }}</span>
-						</p>
+						<div>
 						<p :style="{visibility:show_share_message}" class="responsive-font">
 							Share the link of this page with a friend to start playing
 							or wait for someone to join this game
 						</p>
+						</div>
 						<div class='timer spacing-top'>
 							<Timer/>
 						</div>
 					</b-row>
 				</b-col>
-				<b-col sm="12" md="12" lg="9" xl="9">
-					<p v-if="this.$vssWidth >= 576" class="responsive-font">
+				<b-col sm="12" md="12" lg="9" xl="9" class="responsive-padding-left">
+					<p v-if="this.$vssWidth >= 992" class="responsive-font">
 						<span>You are connected as </span>
 						<span class="neochess-title">{{ this.$store.state.username }}</span>
 					</p>
@@ -147,7 +149,7 @@ export default {
 		compute_board_size() {
 			const w = this.$vssWidth;
 			const h = this.$vssHeight;
-			const size = w < h ? 0.85*w : 0.8*h;
+			const size = w < h ? 0.85*w : 0.85*h;
 			return size.toString();
 		},
 		refresh(event) {
@@ -160,6 +162,10 @@ export default {
 			} else {
 				this.load();
 			}
+		},
+		screenResize() {
+			this.defined_board_size = this.compute_board_size();
+			this.neochess_game = this.defined_board_size;
 		}
 	},
 	sockets: {
@@ -202,6 +208,10 @@ export default {
 	},
 	created() {
 		this.join_game();
+		window.addEventListener("resize", this.screenResize);
+	},
+	destroyed() {
+		window.removeEventListener("resize", this.screenResize);
 	},
 	mixins: [VueScreenSize.VueScreenSizeMixin],
 }
@@ -224,6 +234,9 @@ export default {
 @media screen and (max-width: 575px) {
     .responsive-font {
 		font-size: small;
+	}
+	.responsive-padding-left {
+		margin-left: -15px;
 	}
 }
 .link {

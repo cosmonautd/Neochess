@@ -1,6 +1,6 @@
 <template>
 <div id="neochess-timer">
-	<div v-if="this.$vssWidth >= 576">
+	<div v-if="this.$vssWidth >= 992">
 		<div>
 			<div class="neochess-time round-corners">{{opponentTime}}</div>
 			<div class="neochess-username">{{opponent}}</div>
@@ -14,11 +14,11 @@
 	<div v-else>
 		<b-container fluid class="bv-example-row">
 			<b-row align-h="center">
-				<b-col >
+				<b-col>
 					<div class="neochess-time round-corners">{{opponentTime}}</div>
 					<div class="neochess-username">{{opponent}}</div>
 				</b-col>
-				<b-col >
+				<b-col>
 					<div class="neochess-time round-corners">{{userTime}}</div>
 					<div class="neochess-username">{{username}}</div>
 				</b-col>
@@ -90,15 +90,15 @@ export default {
 .neochess-username {
 	font-size: x-large;
 }
-@media screen and (max-width: 575px) {
+@media screen and (max-width: 991px) {
     .vertical-spacing {
 		height: 1em;
 	}
 	.neochess-time {
-		font-size: small;
+		font-size: large;
 	}
 	.neochess-username {
-		font-size: small;
+		font-size: medium;
 	}
 }
 </style>

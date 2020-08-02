@@ -3,14 +3,7 @@
 	<p v-if="games.length < 1" class="empty-table">
 		No games
 	</p>
-	<table v-else border="0px">
-		<!-- <thead>
-			<tr>
-				<th>Opponent</th>
-				<th>Time Control</th>
-				<th></th>
-			</tr>
-		</thead> -->
+	<table v-else>
 		<tbody>
 			<tr v-for="game in games" :key="game.gameId">
 				<td class="left-round-corners">{{ game.host }}</td>
