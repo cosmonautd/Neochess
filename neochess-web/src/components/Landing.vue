@@ -1,8 +1,11 @@
 <template>
 <div id="neochess-landing">
 	<div class="container-fluid">
+		<div class="vertical-spacing-1"></div>
 		<div class="vertical-spacing-top"/>
-		<h1 class="neochess-title">neochess</h1>
+		<a href="." class="link">
+			<h1 class="neochess-title">neochess</h1>
+		</a>
 		<p>
 			<span>You are connected as </span>
 			<span class="neochess-title">{{ this.$store.state.username }}</span>
@@ -126,5 +129,8 @@ h1 {
 		width: 5em;
 		height: 5em;
 	}
+}
+.link {
+	text-decoration: none;
 }
 </style>

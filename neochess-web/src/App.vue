@@ -77,4 +77,12 @@ p {
 .vertical-spacing-8 {
 	height: 8em;
 }
+.unselectable a, p, h1 {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
 </style>

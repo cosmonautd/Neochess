@@ -4,17 +4,24 @@
 		<b-container fluid class="bv-example-row">
 			<b-row align-h="center">
 				<b-col align-self="center">
-					<p v-if="this.$vssWidth < 576" class="responsive-font">
-						<span>You are connected as </span>
-						<span class="neochess-title">{{ this.$store.state.username }}</span>
-					</p>
-					<p :style="{visibility:show_share_message}" class="responsive-font">
-						Share the link of this page with a friend to start playing
-						or wait for someone to join
-					</p>
-					<div class='timer spacing-top'>
-						<Timer/>
-					</div>
+					<b-row align-h="center" align-v="start">
+						<a href=".." class="link">
+							<h1 class="neochess-title">neochess</h1>
+						</a>
+					</b-row>
+					<b-row align-h="center">
+						<p v-if="this.$vssWidth < 576" class="responsive-font">
+							<span>You are connected as </span>
+							<span class="neochess-title">{{ this.$store.state.username }}</span>
+						</p>
+						<p :style="{visibility:show_share_message}" class="responsive-font">
+							Share the link of this page with a friend to start playing
+							or wait for someone to join this game
+						</p>
+						<div class='timer spacing-top'>
+							<Timer/>
+						</div>
+					</b-row>
 				</b-col>
 				<b-col sm="12" md="12" lg="9" xl="9">
 					<p v-if="this.$vssWidth >= 576" class="responsive-font">
@@ -202,7 +209,7 @@ export default {
 
 <style scoped>
 .spacing-top-double {
-	margin-top: 3em;
+	margin-top: 1.5em;
 }
 .timer {
 	width: 100%;
@@ -218,5 +225,8 @@ export default {
     .responsive-font {
 		font-size: small;
 	}
+}
+.link {
+	text-decoration: none;
 }
 </style>
