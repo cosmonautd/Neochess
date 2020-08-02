@@ -121,7 +121,6 @@ const userTimeSync = (username, whiteUsername, blackUsername) => {
 	sync.gameId = gameId;
 	sync[whiteUsername] = Math.max(0, timers[whiteUsername+gameId].time);
 	sync[blackUsername] = Math.max(0, timers[blackUsername+gameId].time);
-	console.log(sync)
 	io.to(username+sockets[username]+gameId).emit('timesync', sync);
 }
 
@@ -349,6 +348,9 @@ io.on('connection', (socket) => {
 				loop: null,
 				time: seconds[params.timeControl]
 			};
+
+			/* Removes other games from this user from joinable list */
+			joinableGames = joinableGames.filter(g => g.host !== username);
 
 			/* Set game as joinable */
 			joinableGames.push({
