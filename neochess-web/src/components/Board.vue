@@ -83,7 +83,11 @@ export default {
 				else capture = false;
 
 				if (!this.game.in_check()) {
-					if (capture) this.$sounds.get('capture').play();
+					if (capture) {
+						const captureSound = this.$sounds.get('capture');
+						captureSound.volume(0.25);
+						captureSound.play();
+					} 
 					else this.$sounds.get('move').play();
 				}
 				
@@ -92,7 +96,11 @@ export default {
 			updateGame: function(data) {
 				if (data.game) {
 					this.$store.commit('update_game', data.game);
-					if (this.game.in_check()) this.$sounds.get('check').play();
+					if (this.game.in_check()) {
+						const checkSound = this.$sounds.get('check');
+						checkSound.volume(0.3);
+						checkSound.play();
+					}
 				}
 			},
 			gameOver: function() {
