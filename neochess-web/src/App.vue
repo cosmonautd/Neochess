@@ -52,13 +52,6 @@ p {
 .bv-example-row {
 	height: 100%;
 }
-.center {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	height: 200px;
-	border: 3px solid green;
-}
 .round-corners {
 	border-radius: 15px 15px 15px 15px;
 }
@@ -85,4 +78,8 @@ p {
     -ms-user-select: none;
     user-select: none;
 }
+// button {
+// 	background-color: #5489B1;
+// 	border-color: #5489B1;
+// }
 </style>

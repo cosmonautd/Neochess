@@ -35,6 +35,7 @@
 						:size="board_size"
 						:orientation="orientation"
 						:player="orientation"
+						boardClass="neochess-blue merida"
 					/>
 				</b-col>
 			</b-row>

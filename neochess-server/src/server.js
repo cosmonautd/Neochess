@@ -84,27 +84,31 @@ const seconds = {
  * @param {Object} resultData Object containing {result, winner}.
  */
 const gameOver = async (gameId, player1, player2, resultData) => {
-	/* Emits gameOver event to the game room */
-	io.to(gameId).emit('gameOver', resultData);
-	/* Stops time counting for both players */
-	if (timers[player1+gameId].loop) {
-		clearInterval(timers[player1+gameId].loop);
-		timers[player1+gameId].loop = null;
+	/* Checks if game is not yet set as finished in the DB */
+	const game = await getGame(gameId);
+	if (!game.state.finished) {
+		/* Emits gameOver event to the game room */
+		io.to(gameId).emit('gameOver', resultData);
+		/* Stops time counting for both players */
+		if (timers[player1+gameId].loop) {
+			clearInterval(timers[player1+gameId].loop);
+			timers[player1+gameId].loop = null;
+		}
+		if (timers[player2+gameId].loop) {
+			clearInterval(timers[player2+gameId].loop);
+			timers[player2+gameId].loop = null;
+		}
+		/* Stops time sync for the game room */
+		if (timesync[gameId])
+			clearInterval(timesync[gameId]);
+		
+		/* Game is set as finished */
+		await updateGame(gameId, {
+			'state.finished': true,
+			'result.description': resultData.result,
+			'result.winner': resultData.winner
+		});
 	}
-	if (timers[player2+gameId].loop) {
-		clearInterval(timers[player2+gameId].loop);
-		timers[player2+gameId].loop = null;
-	}
-	/* Stops time sync for the game room */
-	if (timesync[gameId])
-		clearInterval(timesync[gameId]);
-	
-	/* Game is set as finished */
-	await updateGame(gameId, {
-		'state.finished': true,
-		'result.description': resultData.result,
-		'result.winner': resultData.winner
-	});
 }
 
 const gameTimeSync = (gameId, whiteUsername, blackUsername) => {
@@ -602,6 +606,15 @@ io.on('connection', (socket) => {
 			/* Starts timers only after black plays its first move */
 			if (orientation === 'black' || game.state.started) {
 				/* Starts opponent's timer */
+				/**
+				 * TODO: HOW TO AVOID DECREASING TIMER IF GAME HAS FINISHED?
+				 * Sometimes, if a move is passed by a player whose timer just reached 0,
+				 * the game ends by timeout, but it still keeps decreasing opponent's
+				 * timer. When this timer reaches 0 too, server emits an event
+				 * stating that the opponent lost by timeout, which is not true.
+				 * Check this out later. Couldn't reproduce this bug consistently yet.
+				 */
+
 				timers[opponent+gameId] = {
 					loop: setInterval(async () => {
 						const t = timers[opponent+gameId].time;
