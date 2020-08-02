@@ -5,7 +5,7 @@
 			<b-row align-h="center">
 				<b-col align-self="center">
 					<b-row align-h="center" align-v="start">
-						<a href=".." class="link">
+						<a href="." class="link">
 							<h1 class="neochess-title">neochess</h1>
 						</a>
 					</b-row>
