@@ -357,12 +357,13 @@ io.on('connection', (socket) => {
 				gameId: gameId},
 			);
 
-			/**
-			 * Broadcasts the updated list of joinable games.
-			 * TODO: It's better to emit user-specific joinable games, to avoid frontend
-			 * filtering. After all, a user should not join a game against himself.
-			 */
-			io.emit('gamesList', {games: joinableGames});
+			/* Broadcasts the updated list of joinable games, filtered by username */
+			for (let u in sockets) {
+				const socketId = sockets[u];
+				io.to(socketId).emit('gamesList', {
+					games: joinableGames.filter(g => g.host !== u)
+				});
+			}
 
 			/* Event is logged */
 			const loginfo = {
@@ -511,12 +512,13 @@ io.on('connection', (socket) => {
 			/* If game is joined, removes it from array of joinable games */
 			joinableGames = joinableGames.filter(g => g.gameId.toString() != gameId);
 
-			/**
-			 * Broadcasts the updated list of joinable games.
-			 * TODO: It's better to emit user-specific joinable games, to avoid frontend
-			 * filtering. After all, a user should not join a game against himself.
-			 */
-			io.emit('gamesList', {games: joinableGames});
+			/* Broadcasts the updated list of joinable games, filtered by username */
+			for (let u in sockets) {
+				const socketId = sockets[u];
+				io.to(socketId).emit('gamesList', {
+					games: joinableGames.filter(g => g.host !== u)
+				});
+			}
 
 			/* Event is logged */
 			const loginfo = {
