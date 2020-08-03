@@ -41,6 +41,7 @@
 			https://github.com/cosmonautd/vue-chessboard
 			https://icons8.com/
 			https://www.zapsplat.com/
+			https://socket.io/
 		</div>
 	</div>
 </div>

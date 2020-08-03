@@ -321,17 +321,6 @@ io.on('connection', (socket) => {
 
 			timesync[gameId] = null;
 
-			/* Generates game parameters */
-			const params = {
-				gameId,
-				orientation,
-				username,
-				opponent: null,
-				timeControl: game.timeControl.string,
-				fen: game.state.fen,
-				lastMove: game.state.lastMove
-			};
-
 			/* User leaves previous game */
 			const previousGameId = currentGameId[username];
 			if (previousGameId) {
@@ -345,12 +334,12 @@ io.on('connection', (socket) => {
 			currentGameId[username] = gameId;
 
 			/* Game parameters are emitted to the user */
-			io.to(gameId).emit('gameCreated', {game: {params}});
+			io.to(gameId).emit('gameCreated', {game});
 
 			/* A timer is assigned to the user for this game */
 			timers[username+gameId] = {
 				loop: null,
-				time: seconds[params.timeControl]
+				time: seconds[game.timeControl.string]
 			};
 
 			/* Removes other games from this user from joinable list */
@@ -359,7 +348,7 @@ io.on('connection', (socket) => {
 			/* Set game as joinable */
 			joinableGames.push({
 				host: username,
-				timeControl: params.timeControl,
+				timeControl: game.timeControl.string,
 				gameId: gameId},
 			);
 
@@ -462,17 +451,6 @@ io.on('connection', (socket) => {
 			/* Updates the game in the database */
 			game = await updateGame(gameId, update);
 
-			/* Generate game parameters */
-			const params = {
-				gameId: game._id,
-				orientation,
-				username,
-				opponent,
-				timeControl: game.timeControl.string,
-				fen: game.state.fen,
-				lastMove: game.state.lastMove
-			};
-
 			/* User leaves previous game */
 			const previousGameId = currentGameId[username];
 			if (previousGameId) {
@@ -486,26 +464,15 @@ io.on('connection', (socket) => {
 			currentGameId[username] = gameId;
 
 			/* Game parameters are emitted to the user */
-			io.to(socket.id).emit('gameJoined', {game: {params}});
+			io.to(socket.id).emit('gameJoined', {game});
 
 			/* Emits update game event to opponent */
-			io.to(opponent+sockets[opponent]+gameId).emit('updateGame', {
-				game: {
-					params: {
-						gameId: game._id,
-						orientation: opponentOrientation,
-						username: opponent,
-						opponent: username,
-						fen: game.state.fen,
-						lastMove: game.state.lastMove
-					}
-				}
-			});
+			io.to(opponent+sockets[opponent]+gameId).emit('updateGame', {game});
 
 			/* A timer is assigned to the joining user for this game */
 			timers[username+gameId] = {
 				loop: null,
-				time: seconds[params.timeControl]
+				time: seconds[game.timeControl.string]
 			};
 
 			/* Starts emittings timesync events */
@@ -638,30 +605,12 @@ io.on('connection', (socket) => {
 
 			/* Emits updateGame event to black */
 			io.to(blackUsername+sockets[blackUsername]+gameId).emit('updateGame', {
-				game: {
-					params: {
-						gameId: gameId,
-						orientation: 'black',
-						username: blackUsername,
-						opponent: whiteUsername,
-						fen: game.state.fen,
-						lastMove: game.state.lastMove
-					}
-				}
+				game
 			});
 
 			/* Emits updateGame event to white */
 			io.to(whiteUsername+sockets[whiteUsername]+gameId).emit('updateGame', {
-				game: {
-					params: {
-						gameId: gameId,
-						orientation: 'white',
-						username: whiteUsername,
-						opponent: blackUsername,
-						fen: game.state.fen,
-						lastMove: game.state.lastMove
-					}
-				}
+				game
 			});
 
 			/* Logs the game is ascii */

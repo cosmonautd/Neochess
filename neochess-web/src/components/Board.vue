@@ -24,7 +24,7 @@ export default {
 				const movedata = {
 					username: this.$store.state.username,
 					player: this.player,
-					gameId: this.$store.state.game.params.gameId,
+					gameId: this.$store.state.game._id,
 					move: {from: orig, to: dest, promotion: this.promoteTo},
 					fen: this.game.fen()
 				};
@@ -117,12 +117,12 @@ export default {
 			});
 		}
 		if (this.player == 'white') {
-			if (!this.$store.state.game.params.fen) {
+			if (!this.$store.state.game.state.fen) {
 				this.board.set({
 					movable: { events: { after: this.playerMove()} },
 				});
 			} else {
-				this.game.load(this.$store.state.game.params.fen);
+				this.game.load(this.$store.state.game.state.fen);
 				this.board.set({
 					fen: this.game.fen(),
 					turnColor: this.toColor(),
@@ -132,16 +132,16 @@ export default {
 						dests: this.possibleMoves(),
 						events: { after: this.playerMove()},
 					},
-					lastMove: this.$store.state.game.params.lastMove ? [
-							this.$store.state.game.params.lastMove.from,
-							this.$store.state.game.params.lastMove.to
+					lastMove: this.$store.state.game.state.lastMove ? [
+							this.$store.state.game.state.lastMove.from,
+							this.$store.state.game.state.lastMove.to
 					] : null
 				});
 			}
 		}
 		if (this.player == 'black') {
-			if (this.$store.state.game.params.fen) {
-				this.game.load(this.$store.state.game.params.fen);
+			if (this.$store.state.game.state.fen) {
+				this.game.load(this.$store.state.game.state.fen);
 				this.board.set({
 					fen: this.game.fen(),
 					turnColor: this.toColor(),
@@ -151,9 +151,9 @@ export default {
 						dests: this.possibleMoves(),
 						events: { after: this.playerMove()},
 					},
-					lastMove: this.$store.state.game.params.lastMove ? [
-							this.$store.state.game.params.lastMove.from,
-							this.$store.state.game.params.lastMove.to
+					lastMove: this.$store.state.game.state.lastMove ? [
+							this.$store.state.game.state.lastMove.from,
+							this.$store.state.game.state.lastMove.to
 					] : null
 				});
 			}

@@ -46,9 +46,16 @@ export default {
 			return this.$store.state.username;
 		},
 		opponent() {
-			if (this.$store.state.game.params.opponent)
-				return this.$store.state.game.params.opponent;
-			else return 'waiting for opponent...'
+			const white = this.$store.state.game.players.white.username;
+			const black = this.$store.state.game.players.black.username;
+			if (this.orientation === 'white' && black !== null) return black;
+			if (this.orientation === 'black' && white !== null) return white;
+			else return 'waiting for opponent...';
+		},
+		orientation() {
+			if (this.$store.state.game.players.white.username === this.username)
+				return 'white';
+			else return 'black';
 		},
 		userTime() {
 			return this.secondsToMinutes(this.$store.state.time.t1);
@@ -67,7 +74,7 @@ export default {
 	sockets: {
 		listener: {
 			timesync: function (sync) {
-				if (sync.gameId === this.$store.state.game.params.gameId)
+				if (sync.gameId === this.$store.state.game._id)
 				this.$store.commit('update_time', {
 					t1: sync[this.username],
 					t2: sync[this.opponent]

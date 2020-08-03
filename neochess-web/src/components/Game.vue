@@ -122,7 +122,9 @@ export default {
 			return this.$store.state.username;
 		},
 		orientation() {
-			return this.$store.state.game.params.orientation;
+			if (this.$store.state.game.players.white.username === this.username)
+				return 'white';
+			else return 'black';
 		},
 		css_vars() {
 			return {
@@ -134,7 +136,11 @@ export default {
 			return this.$store.state.status;
 		},
 		show_share_message() {
-			return this.$store.state.game.params.opponent === null ? 'visible' : 'hidden';
+			if (this.orientation === 'white' &&
+				this.$store.state.game.players.black.username === null) return 'visible';
+			if (this.orientation === 'black' &&
+				this.$store.state.game.players.white.username === null) return 'visible';
+			else return 'hidden';
 		}
 	},
 	methods: {
@@ -183,8 +189,8 @@ export default {
 				if (data.game) {
 					this.$store.commit('update_game', data.game);
 					this.$store.commit('update_time', {
-						t1: seconds[data.game.params.timeControl],
-						t2: seconds[data.game.params.timeControl]
+						t1: seconds[data.game.timeControl.string],
+						t2: seconds[data.game.timeControl.string]
 					});
 					this.load();
 				} else {

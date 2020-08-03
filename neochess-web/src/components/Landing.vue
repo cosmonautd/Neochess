@@ -80,7 +80,7 @@ export default {
 		go_to_new_game(game) {
 			this.$store.commit('update_game', game);
 			this.$router.push({ name: 'game', params: {
-				gameId: this.$store.state.game.params.gameId
+				gameId: this.$store.state.game._id
 			}});
 		},
 		about() {
@@ -106,8 +106,8 @@ export default {
 			gameCreated: function (data) {
 				this.go_to_new_game(data.game);
 				this.$store.commit('update_time', {
-					t1: seconds[data.game.params.timeControl],
-					t2: seconds[data.game.params.timeControl]
+					t1: seconds[data.game.timeControl.string],
+					t2: seconds[data.game.timeControl.string]
 				});
 			}
 		}
