@@ -3,7 +3,7 @@
 	<div class="container-fluid">
 		<div class="vertical-spacing-1"></div>
 		<div class="vertical-spacing-top"/>
-		<a href="." class="link">
+		<a href="." class="link" style="display: inline-block">
 			<h1 class="neochess-title">neochess</h1>
 		</a>
 		<p>
@@ -36,11 +36,19 @@
 			</button>
 		</div>
 		<div class="vertical-spacing-3"></div>
-		<p class="neochess-title"> Choose a game </p>
+		<p class="neochess-title"> Join a game </p>
 		<div class="vertical-spacing-1"/>
 		<GameList
 			:games="games"
 		/>
+		<div class="vertical-spacing-4"></div>
+		<div class="footer round-corners" @click="howto">
+			how neochess works
+		</div>
+		<div class="footer round-corners" @click="about">
+			about
+		</div>
+		<div class="vertical-spacing-1"></div>
 	</div>
 </div>
 </template>
@@ -74,6 +82,12 @@ export default {
 			this.$router.push({ name: 'game', params: {
 				gameId: this.$store.state.game.params.gameId
 			}});
+		},
+		about() {
+			this.$router.push({ name: 'about'});
+		},
+		howto() {
+			this.$router.push({ name: 'howto'});
 		}
 	},
 	sockets: {
@@ -132,5 +146,13 @@ h1 {
 }
 .link {
 	text-decoration: none;
+}
+.footer {
+	background-color: #222;
+	margin: 0 0.5em 0 0.5em;
+	display: inline-block;
+	padding: 1.25em 2em 1.25em 2em;
+	cursor: pointer;
+	display: inline-block;
 }
 </style>
