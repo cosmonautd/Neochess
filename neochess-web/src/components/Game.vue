@@ -10,9 +10,9 @@
 			<b-row align-h="center">
 				<b-col align-self="center">
 					<b-row align-h="center" align-v="start">
-						<a href="." class="link">
-							<h1 class="neochess-title gray">neochess</h1>
-						</a>
+						<div @click="landingPage" class="link">
+							<h1 class="neochess-title" style="color: #444">neochess</h1>
+						</div>
 					</b-row>
 					<div v-if="this.$vssWidth < 992" class="responsive-font">
 						<span>You are connected as </span>
@@ -178,6 +178,9 @@ export default {
 		screenResize() {
 			this.defined_board_size = this.compute_board_size();
 			this.neochess_game = this.defined_board_size;
+		},
+		landingPage() {
+			this.$router.push({name: 'landing'});
 		}
 	},
 	sockets: {
@@ -253,6 +256,7 @@ export default {
 }
 .link {
 	text-decoration: none;
+	cursor: pointer;
 }
 .gray {
 	color: #555;

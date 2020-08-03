@@ -102,7 +102,6 @@ export default {
 							this.$store.state.game.state.lastMove.to
 					] : null
 				});
-				console.log(this.historyIndex)
 			}
 		},
 		historyBackwards() {
@@ -121,7 +120,6 @@ export default {
 					lastMove: null
 				});
 				this.historyIndex -= 1;
-				console.log(this.historyIndex)
 			}
 		},
 		historyCurrent() {
@@ -145,7 +143,6 @@ export default {
 			});
 			this.historyBoard = new Chess();
 			this.historyBoard.load_pgn(this.$store.state.game.history.pgn);
-			console.log(this.historyIndex)
 		},
 		historyBeginning() {
 			if (this.$store.state.game.history.moves.length === 0)
@@ -163,13 +160,28 @@ export default {
 				},
 				lastMove: null
 			});
-			console.log(this.historyIndex)
 		},
 		moveThroughHistory(event) {
-			if (event.key == 'ArrowRight') this.historyForwards();
-			if (event.key == 'ArrowLeft') this.historyBackwards();
-			if (event.key == 'ArrowUp') this.historyCurrent();
-			if (event.key == 'ArrowDown') this.historyBeginning();
+			if (this.$store.state.game) {
+				switch (event.key) {
+					case 'ArrowRight': {
+						this.historyForwards();
+						break;
+					}
+					case 'ArrowLeft': {
+						this.historyBackwards();
+						break;
+					}
+					case 'ArrowUp': {
+						this.historyCurrent();
+						break;
+					}
+					case 'ArrowDown': {
+						this.historyBeginning();
+						break;
+					}
+				}
+			}
 		}
 	},
 	sockets: {
