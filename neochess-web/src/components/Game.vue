@@ -1,4 +1,9 @@
 <template>
+<!-- <div id="neochess-game" :key="neochess_game" tabindex="0"
+	v-on:keyup.right="historyForwards"
+	v-on:keyup.left="historyBackwards"
+	v-on:keyup.up="historyCurrent"
+	v-on:keyup.down="historyBeginning" > -->
 <div id="neochess-game" :key="neochess_game">
 	<div v-if="status.code === 'success' || status.code === 'over'" class="spacing-top-double">
 		<b-container fluid class="bv-example-row">

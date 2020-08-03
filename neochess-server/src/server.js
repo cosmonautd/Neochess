@@ -307,7 +307,8 @@ io.on('connection', (socket) => {
 					lastMove: null
 				},
 				history: {
-					pgn: new chessjs.Chess().pgn()
+					pgn: new chessjs.Chess().pgn(),
+					moves: new chessjs.Chess().history()
 				},
 				result: {
 					description: null,
@@ -542,7 +543,8 @@ io.on('connection', (socket) => {
 			const update = {
 				'state.fen': gameRepresentation.fen(),
 				'state.lastMove': move,
-				'history.pgn': gameRepresentation.pgn()
+				'history.pgn': gameRepresentation.pgn(),
+				'history.moves': gameRepresentation.history({verbose: true})
 			};
 			game = await updateGame(gameId, update);
 

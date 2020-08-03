@@ -1,8 +1,34 @@
 <script>
 import {chessboard} from './vue-chessboard'
+import Chess from 'chess.js'
 export default {
 	name: "neochess-board",
 	extends: chessboard,
+	data: function() {
+		return {
+			historyMode: false,
+			historyIndex: 0,
+			historyBoard: new Chess()
+		}
+	},
+	computed: {
+		history() {
+			return this.$store.state.game.history;
+		}
+	},
+	watch: {
+		historyMode() {
+			if (this.historyMode) {
+				this.board.set({
+					viewOnly: true
+				})
+			} else {
+				this.board.set({
+					viewOnly: false
+				})
+			}
+		}
+	},
 	methods: {
 		playerMove() {
 			return (orig, dest) => {
@@ -33,9 +59,10 @@ export default {
 		},
 		findCheckSquare(lastMovePlayer) {
 			const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-			if (this.game.in_check()) {
+			const game = this.historyMode ? this.historyBoard : this.game;
+			if (game.in_check()) {
 				var king = lastMovePlayer === 'black' ? 'K' : 'k';
-				var ranks = this.game.fen().split(' ')[0].split('/');
+				var ranks = game.fen().split(' ')[0].split('/');
 				for (let i=0; i < ranks.length; i++) {
 					const rank = ranks[i];
 					const kingIndex = rank.indexOf(king);
@@ -53,12 +80,103 @@ export default {
 			} else {
 				return false;
 			}
+		},
+		historyForwards() {
+			if (this.historyIndex < this.$store.state.game.history.moves.length - 1) {
+				this.historyIndex += 1;
+				if (this.historyIndex === this.$store.state.game.history.moves.length - 1) {
+					this.historyMode = false;
+				}
+				const move = this.$store.state.game.history.moves[this.historyIndex]
+				this.historyBoard.move(move.san);
+				this.board.set({
+					fen: this.historyBoard.fen(),
+					check: this.findCheckSquare(move.color === 'w' ? 'white' : 'black'),
+					movable: {
+						color: this.player,
+						dests: this.possibleMoves(),
+						events: { after: this.playerMove()},
+					},
+					lastMove: this.historyMode ? null : this.$store.state.game.state.lastMove ? [
+							this.$store.state.game.state.lastMove.from,
+							this.$store.state.game.state.lastMove.to
+					] : null
+				});
+				console.log(this.historyIndex)
+			}
+		},
+		historyBackwards() {
+			this.historyMode = true;
+			if (this.historyIndex > -1) {
+				const move = this.$store.state.game.history.moves[this.historyIndex]
+				this.historyBoard.undo()
+				this.board.set({
+					fen: this.historyBoard.fen(),
+					check: this.findCheckSquare(move.color === 'w' ? 'black' : 'white'),
+					movable: {
+						color: this.player,
+						dests: this.possibleMoves(),
+						events: { after: this.playerMove()},
+					},
+					lastMove: null
+				});
+				this.historyIndex -= 1;
+				console.log(this.historyIndex)
+			}
+		},
+		historyCurrent() {
+			this.historyMode = false;
+			this.game.load(this.$store.state.game.state.fen);
+			this.historyIndex = this.$store.state.game.history.moves.length - 1;
+			const move = this.$store.state.game.history.moves[this.historyIndex]
+			this.board.set({
+				fen: this.game.fen(),
+				turnColor: this.toColor(),
+				check: this.findCheckSquare(move.color === 'w' ? 'white' : 'black'),
+				movable: {
+					color: this.player,
+					dests: this.possibleMoves(),
+					events: { after: this.playerMove()},
+				},
+				lastMove: this.$store.state.game.state.lastMove ? [
+						this.$store.state.game.state.lastMove.from,
+						this.$store.state.game.state.lastMove.to
+				] : null
+			});
+			this.historyBoard = new Chess();
+			this.historyBoard.load_pgn(this.$store.state.game.history.pgn);
+			console.log(this.historyIndex)
+		},
+		historyBeginning() {
+			if (this.$store.state.game.history.moves.length === 0)
+				this.historyMode = false;
+			else this.historyMode = true;
+			this.historyBoard = new Chess();
+			this.historyIndex = -1;
+			this.board.set({
+				fen: this.historyBoard.fen(),
+				check: null,
+				movable: {
+					color: this.player,
+					dests: this.possibleMoves(),
+					events: { after: this.playerMove()},
+				},
+				lastMove: null
+			});
+			console.log(this.historyIndex)
+		},
+		moveThroughHistory(event) {
+			if (event.key == 'ArrowRight') this.historyForwards();
+			if (event.key == 'ArrowLeft') this.historyBackwards();
+			if (event.key == 'ArrowUp') this.historyCurrent();
+			if (event.key == 'ArrowDown') this.historyBeginning();
 		}
 	},
 	sockets: {
 		listener: {
 			moved: function (movedata) {
 				if (movedata.username != this.$store.state.username) {
+					this.historyMode = false;
 					this.game.move(movedata.move);
 					this.board.set({
 						fen: movedata.fen,
@@ -77,7 +195,6 @@ export default {
 				let capture = false;
 				const history = this.game.history({verbose: true});
 				if (history.length > 1) {
-					console.log('history:', history);
 					capture = history[history.length - 1].captured ? true : false;
 				}
 				else capture = false;
@@ -96,6 +213,9 @@ export default {
 			updateGame: function(data) {
 				if (data.game) {
 					this.$store.commit('update_game', data.game);
+					this.historyBoard = new Chess();
+					this.historyBoard.load_pgn(this.$store.state.game.history.pgn);
+					this.historyIndex = this.historyBoard.history().length - 1;
 					if (this.game.in_check()) {
 						const checkSound = this.$sounds.get('check');
 						checkSound.volume(0.3);
@@ -109,6 +229,12 @@ export default {
 				});
 			}
 		}
+	},
+	created() {
+		window.addEventListener('keydown', this.moveThroughHistory);
+		this.historyBoard = new Chess();
+		this.historyBoard.load_pgn(this.$store.state.game.history.pgn);
+		this.historyIndex = this.historyBoard.history().length - 1;
 	},
 	mounted() {
 		if (this.$store.state.status.code === 'over') {
