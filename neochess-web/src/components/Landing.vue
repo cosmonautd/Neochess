@@ -146,7 +146,7 @@ export default {
 }
 .footer {
 	background-color: #222;
-	margin: 0 0.5em 0 0.5em;
+	margin: 0.25em 0.5em 0.25em 0.5em;
 	display: inline-block;
 	padding: 1.25em 2em 1.25em 2em;
 	cursor: pointer;

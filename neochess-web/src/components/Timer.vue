@@ -5,11 +5,14 @@
 			<div class="neochess-time round-corners">{{opponentTime}}</div>
 			<div class="neochess-username">{{opponent}}</div>
 		</div>
-		<div class="vertical-spacing"></div>
+		<div class="vertical-spacing-2"></div>
 		<div>
 			<div class="neochess-username">{{username}}</div>
 			<div class="neochess-time round-corners">{{userTime}}</div>
 		</div>
+		<div class="vertical-spacing-2"></div>
+		<div @click="resign" class="round-corners neochess-option">Resign</div>
+		<!-- <div class="round-corners neochess-option">Offer draw</div> -->
 	</div>
 	<div v-else>
 		<b-container fluid class="bv-example-row">
@@ -21,6 +24,12 @@
 				<b-col>
 					<div class="neochess-time round-corners">{{userTime}}</div>
 					<div class="neochess-username">{{username}}</div>
+				</b-col>
+				<b-col>
+					<div @click="resign" class="round-corners neochess-option">Resign</div>
+					<!-- <div class="round-corners neochess-option">
+						Offer draw
+					</div> -->
 				</b-col>
 			</b-row>
 		</b-container>
@@ -70,6 +79,9 @@ export default {
 			const s = (seconds % 60).toString().padStart(2, '0');
 			return `${m}:${s}`;
 		},
+		resign() {
+			this.$socket.emit('resign');
+		}
 	},
 	sockets: {
 		listener: {
@@ -87,15 +99,20 @@ export default {
 </script>
 
 <style scoped>
-.vertical-spacing {
-	height: 2em;
-}
 .neochess-time {
 	font-size: xxx-large;
 	background-color: #333;
 }
 .neochess-username {
 	font-size: x-large;
+}
+.neochess-option {
+	display: inline-block;
+	padding: 0.6em 0.75em 0.6em 0.75em;
+	margin: 0.25em 0.25em 0.25em 0.25em;
+	font-size: medium;
+	background-color: #333;
+	cursor: pointer;
 }
 @media screen and (max-width: 991px) {
     .vertical-spacing {
@@ -106,6 +123,12 @@ export default {
 	}
 	.neochess-username {
 		font-size: medium;
+	}
+	.neochess-option {
+		display: inherit;
+		padding: 0.4em 0.9em 0.4em 0.9em;
+		margin: 0em 0em 0em 0em;
+		font-size: small;
 	}
 }
 </style>

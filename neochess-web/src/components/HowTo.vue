@@ -9,7 +9,7 @@
 			The minimalistic chess server.
 			No accounts, no ratings, just the game.
 		</p>
-		<div class="vertical-spacing-4"/>
+		<div class="vertical-spacing-2"/>
 		<div class="content">
 			<p>
 				When you enter neochess, you receive a random username. For example,
@@ -57,6 +57,7 @@
 			</div>
 		</div>
 	</div>
+	<div class="vertical-spacing-3"/>
 </div>
 </template>
 

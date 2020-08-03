@@ -9,7 +9,7 @@
 			The minimalistic chess server.
 			No accounts, no ratings, just the game.
 		</p>
-		<div class="vertical-spacing-4"/>
+		<div class="vertical-spacing-2"/>
 		<div class="content">
 			<p>
 				I challenged myself to code a chess server in one week and this is the
@@ -68,6 +68,7 @@
 			</a>
 		</div>
 	</div>
+	<div class="vertical-spacing-3"/>
 </div>
 </template>
 

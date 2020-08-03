@@ -655,6 +655,34 @@ io.on('connection', (socket) => {
 
 		}
 	});
+
+	socket.on('resign', async (data) => {
+
+		try {
+
+			const username = users[socket.id];
+			const gameId = currentGameId[username];
+
+			let game = await getGame(gameId);
+
+			if (game.state.finished) return;
+
+			const result = 'resignation';
+			const winner = username === game.players.white.username ? 
+				game.players.black.username : game.players.white.username;
+
+			const resultData = {result, winner};
+			await gameOver(gameId, username, winner, resultData);
+
+			return;
+
+		} catch (error) {
+
+			/* Logs the error */
+			console.log(error);
+
+		}
+	});
 });
 
 /* Starts the server */
