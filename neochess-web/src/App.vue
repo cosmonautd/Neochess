@@ -13,6 +13,9 @@ export default {
 </script>
 
 <style lang="scss">
+h1 {
+	color: #0366ee
+}
 body {
 	color: #ffffff;
 	background-color: #1D1D1D;

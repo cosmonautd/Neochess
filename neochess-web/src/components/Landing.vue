@@ -129,9 +129,6 @@ export default {
 </script>
 
 <style scoped>
-h1 {
-	color: white
-}
 .time-control-button {
 	margin: 1em;
 	width: 5em;

@@ -1,5 +1,5 @@
 <template>
-<div id="neochess-about">
+<div id="neochess-about" class="small-container">
 	<div class="container-fluid">
 		<div class="vertical-spacing-1"></div>
 		<div class="vertical-spacing-top"/>
@@ -15,7 +15,7 @@
 			<p>
 				I challenged myself to code a chess server in one week and this is the result.
 				To do this, I had to focus on what really matters, the game itself. There are
-				no accounts, usernames are auto-generated. Only the players themselves can
+				no accounts and usernames are auto-generated. Only the players themselves can
 				access the game link, but adding the possibility of watching games is
 				something I'm planning to do. There may be bugs in the current implementation.
 				If you find some, you can let me known by sending an email to david@raiz.dev.
@@ -54,14 +54,11 @@ export default {
 </script>
 
 <style scoped>
-h1 {
-	color: white
-}
 .link {
 	text-decoration: none;
 }
 .content {
-	text-align: left;
+	text-align: justify;
 }
 .bold {
 	font-weight: bold;

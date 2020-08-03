@@ -1,5 +1,5 @@
 <template>
-<div id="neochess-about">
+<div id="neochess-about" class="small-container">
 	<div class="container-fluid">
 		<div class="vertical-spacing-1"></div>
 		<div class="vertical-spacing-top"/>
@@ -31,14 +31,11 @@ export default {
 </script>
 
 <style scoped>
-h1 {
-	color: white
-}
 .link {
 	text-decoration: none;
 }
 .content {
-	text-align: left;
+	text-align: justify;
 }
 .bold {
 	font-weight: bold;

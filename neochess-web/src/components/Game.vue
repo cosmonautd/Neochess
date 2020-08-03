@@ -6,7 +6,7 @@
 				<b-col align-self="center">
 					<b-row align-h="center" align-v="start">
 						<a href="." class="link">
-							<h1 class="neochess-title">neochess</h1>
+							<h1 class="neochess-title gray">neochess</h1>
 						</a>
 					</b-row>
 					<div v-if="this.$vssWidth < 992" class="responsive-font">
@@ -248,5 +248,8 @@ export default {
 }
 .link {
 	text-decoration: none;
+}
+.gray {
+	color: #555;
 }
 </style>
