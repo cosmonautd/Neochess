@@ -18,7 +18,7 @@ export default {
 	},
 	watch: {
 		historyMode() {
-			if (this.historyMode) {
+			if (this.historyMode || this.$store.state.game.state.finished) {
 				this.board.set({
 					viewOnly: true
 				})

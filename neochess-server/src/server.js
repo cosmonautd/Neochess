@@ -88,7 +88,7 @@ const seconds = {
  */
 const gameOver = async (gameId, player1, player2, resultData) => {
 	/* Checks if game is not yet set as finished in the DB */
-	const game = await getGame(gameId);
+	let game = await getGame(gameId);
 	if (!game.state.finished) {
 		/* Emits gameOver event to the game room */
 		io.to(gameId).emit('gameOver', resultData);
@@ -108,11 +108,23 @@ const gameOver = async (gameId, player1, player2, resultData) => {
 			timesync[gameId] = null;
 		}
 		/* Game is set as finished */
-		await updateGame(gameId, {
+		game = await updateGame(gameId, {
 			'state.finished': true,
 			'result.description': resultData.result,
 			'result.winner': resultData.winner
 		});
+
+		/* Emits updateGame event to black */
+		if (player1)
+			io.to(player1+sockets[player1]+gameId).emit('updateGame', {
+				game
+			});
+
+		/* Emits updateGame event to white */
+		if (player2)
+			io.to(player2+sockets[player2]+gameId).emit('updateGame', {
+				game
+			});
 	}
 }
 
@@ -680,16 +692,6 @@ io.on('connection', (socket) => {
 				game = await updateGame(gameId, {'state.started': true});
 			}
 
-			/* Emits updateGame event to black */
-			io.to(blackUsername+sockets[blackUsername]+gameId).emit('updateGame', {
-				game
-			});
-
-			/* Emits updateGame event to white */
-			io.to(whiteUsername+sockets[whiteUsername]+gameId).emit('updateGame', {
-				game
-			});
-
 			/* Logs the game is ascii */
 			console.log(gameRepresentation.ascii());
 
@@ -719,6 +721,18 @@ io.on('connection', (socket) => {
 				const resultData = {result, winner};
 				await gameOver(gameId, username, opponent, resultData);
 				/* TODO: Change resultData schema */
+
+			} else {
+
+				/* Emits updateGame event to black */
+				io.to(blackUsername+sockets[blackUsername]+gameId).emit('updateGame', {
+					game
+				});
+
+				/* Emits updateGame event to white */
+				io.to(whiteUsername+sockets[whiteUsername]+gameId).emit('updateGame', {
+					game
+				});
 			}
 
 			return;
