@@ -65,26 +65,32 @@
 							Time is up!
 						</p>
 						<p v-if="status.result === 'draw.stalemate'">
-							Stalemate.
+							Stalemate
 						</p>
 						<p v-if="status.result === 'draw.threefold_repetition'">
-							Threefold repetition.
+							Threefold repetition
 						</p>
 						<p v-if="status.result === 'draw.insufficient_material'">
-							Insufficient material.
+							Insufficient material
 						</p>
 						<p v-if="status.win && status.result === 'resignation'">
 							Your opponent resigned!
 						</p>
 						<p v-if="status.lose && status.result === 'resignation'">
-							You resigned.
+							You resigned
 						</p>
-						<p v-if="status.win">You won.</p>
-						<p v-if="status.draw">Draw.</p>
+						<p v-if="status.win && status.result === 'abandonment'">
+							Your opponent abandoned the game!
+						</p>
+						<p v-if="status.lose && status.result === 'abandonment'">
+							You abandoned the game
+						</p>
+						<p v-if="status.win">You won</p>
+						<p v-if="status.draw">Draw</p>
 						<p v-if="status.lose && status.result !== 'resignation'">
-							You lost.
+							You lost
 						</p>
-						<div class="vertical-spacing-2"></div>
+						<div class="vertical-spacing-1"></div>
 						<img v-if="status.win" src="../assets/icons8-crown-64.png"/>
 						<img v-if="status.draw" src="../assets/icons8-handshake-64.png"/>
 						<img v-if="status.lose" src="../assets/icons8-explosive-64.png"/>

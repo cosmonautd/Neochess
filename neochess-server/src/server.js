@@ -49,6 +49,9 @@ mongo.connect().then(() => {
 	});
 });
 
+/* Server constants */
+const TIMESYNC_TIMEOUT = 5000;
+
 /* Server memory
 **
 ** users: maps a socket id to a username
@@ -90,18 +93,20 @@ const gameOver = async (gameId, player1, player2, resultData) => {
 		/* Emits gameOver event to the game room */
 		io.to(gameId).emit('gameOver', resultData);
 		/* Stops time counting for both players */
-		if (timers[player1+gameId].loop) {
+		if (player1 && timers[player1+gameId].loop) {
 			clearInterval(timers[player1+gameId].loop);
 			timers[player1+gameId].loop = null;
 		}
-		if (timers[player2+gameId].loop) {
+		if (player2 && timers[player2+gameId].loop) {
 			clearInterval(timers[player2+gameId].loop);
 			timers[player2+gameId].loop = null;
 		}
 		/* Stops time sync for the game room */
-		if (timesync[gameId])
-			clearInterval(timesync[gameId]);
-		
+		if (timesync[gameId]) {
+			clearInterval(timesync[gameId].mainLoop);
+			clearInterval(timesync[gameId].ackLoop);
+			timesync[gameId] = null;
+		}
 		/* Game is set as finished */
 		await updateGame(gameId, {
 			'state.finished': true,
@@ -320,8 +325,6 @@ io.on('connection', (socket) => {
 			game = await createGame(game);
 			const gameId = game._id;
 
-			timesync[gameId] = null;
-
 			/* User leaves previous game */
 			const previousGameId = currentGameId[username];
 			if (previousGameId) {
@@ -341,6 +344,44 @@ io.on('connection', (socket) => {
 			timers[username+gameId] = {
 				loop: null,
 				time: seconds[game.timeControl.string]
+			};
+
+			/* Starts emitting timesync events */
+			let lastTimeSync = {};
+			lastTimeSync[username] = new Date();
+			timesync[gameId] = {
+				mainLoop: setInterval(() => {
+					let sync = {};
+					sync.gameId = gameId;
+					sync[username] = Math.max(0, timers[username+gameId].time);
+					socket.emit('timesync', sync);
+				}, 500),
+				lastTimeSync,
+				ackLoop: setInterval(async () => {
+					if (timesync[gameId]) {
+						const now = new Date();
+						const lastTimeSync = timesync[gameId].lastTimeSync[username];
+						if (Math.abs(now.getTime() - lastTimeSync.getTime()) > TIMESYNC_TIMEOUT) {
+							/* Host has disconnected from the game */
+							logger.log({
+								level: 'info',
+								message: `${username} disconnected from the game ${gameId}`
+							});
+							/* Removes the game from array of joinable games */
+							joinableGames = joinableGames.filter(g => g.gameId.toString() != gameId);
+							/* Broadcasts the updated list of joinable games, filtered by username */
+							for (let u in sockets) {
+								const socketId = sockets[u];
+								io.to(socketId).emit('gamesList', {
+									games: joinableGames.filter(g => g.host !== u)
+								});
+							}
+							/* Terminates the game */
+							const resultData = {result: 'abandonment', winner: null};
+							await gameOver(gameId, null, null, resultData);
+						}
+					}
+				}, TIMESYNC_TIMEOUT),
 			};
 
 			/* Removes other games from this user from joinable list */
@@ -476,12 +517,46 @@ io.on('connection', (socket) => {
 				time: seconds[game.timeControl.string]
 			};
 
-			/* Starts emittings timesync events */
-			timesync[gameId] = setInterval(() => {
-				const whiteUsername = game.players.white.username;
-				const blackUsername = game.players.black.username;
-				gameTimeSync(gameId, whiteUsername, blackUsername);
-			}, 500);
+			const whiteUsername = game.players.white.username;
+			const blackUsername = game.players.black.username;
+
+			/* Updates time sync for the game room */
+			if (timesync[gameId]) {
+				clearInterval(timesync[gameId].mainLoop);
+				clearInterval(timesync[gameId].ackLoop);
+			}
+			let lastTimeSync = timesync[gameId].lastTimeSync;
+			lastTimeSync[username] = new Date();
+
+			timesync[gameId] = {
+				mainLoop: setInterval(() => {
+					gameTimeSync(gameId, whiteUsername, blackUsername);
+				}, 500),
+				lastTimeSync,
+				ackLoop: setInterval(async () => {
+					const now = new Date();
+					const lastTimeSyncW = timesync[gameId].lastTimeSync[whiteUsername];
+					const lastTimeSyncB = timesync[gameId].lastTimeSync[blackUsername];
+					if (Math.abs(now.getTime() - lastTimeSyncW.getTime()) > TIMESYNC_TIMEOUT) {
+						/* White has disconnected from the game */
+						logger.log({
+							level: 'info',
+							message: `${whiteUsername} disconnected from the game ${gameId}`
+						});
+						const resultData = {result: 'abandonment', winner: blackUsername};
+						await gameOver(gameId, whiteUsername, blackUsername, resultData);
+					}
+					if (Math.abs(now.getTime() - lastTimeSyncB.getTime()) > TIMESYNC_TIMEOUT) {
+						/* Black has disconnected from the game */
+						logger.log({
+							level: 'info',
+							message: `${blackUsername} disconnected from the game ${gameId}`
+						});
+						const resultData = {result: 'abandonment', winner: whiteUsername};
+						await gameOver(gameId, whiteUsername, blackUsername, resultData);
+					}
+				}, TIMESYNC_TIMEOUT),
+			};
 
 			/* If game is joined, removes it from array of joinable games */
 			joinableGames = joinableGames.filter(g => g.gameId.toString() != gameId);
@@ -673,6 +748,26 @@ io.on('connection', (socket) => {
 
 			const resultData = {result, winner};
 			await gameOver(gameId, username, winner, resultData);
+
+			return;
+
+		} catch (error) {
+
+			/* Logs the error */
+			console.log(error);
+
+		}
+	});
+
+	socket.on('syncAck', async (ack) => {
+
+		try {
+
+			const username = users[socket.id];
+			const gameId = currentGameId[username];
+
+			if (timesync[gameId])
+				timesync[gameId].lastTimeSync[username] = new Date();
 
 			return;
 

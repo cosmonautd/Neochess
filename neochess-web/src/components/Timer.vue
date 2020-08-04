@@ -86,11 +86,16 @@ export default {
 	sockets: {
 		listener: {
 			timesync: function (sync) {
-				if (sync.gameId === this.$store.state.game._id)
-				this.$store.commit('update_time', {
-					t1: sync[this.username],
-					t2: sync[this.opponent]
-				});
+				if (sync.gameId === this.$store.state.game._id) {
+					const username = this.username;
+					const opponent = this.opponent;
+					this.$store.commit('update_time', {
+						t1: sync[username],
+						t2: sync[opponent] !== undefined ? sync[opponent] : sync[username]
+					});
+					const ack = {gameId: sync.gameId, username};
+					this.$socket.emit('syncAck', ack);
+				}
 			},
 		}
 	},
