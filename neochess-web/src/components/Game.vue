@@ -171,7 +171,7 @@ export default {
 		compute_board_size() {
 			const w = this.$vssWidth;
 			const h = this.$vssHeight;
-			const size = w < h ? 0.85*w : 0.85*h;
+			const size = w < h ? 0.99*w : 0.85*h;
 			return size.toString();
 		},
 		refresh(event) {
@@ -261,7 +261,7 @@ export default {
 		font-size: small;
 	}
 	.responsive-padding-left {
-		margin-left: -15px;
+		margin-left: -7.2%;
 	}
 }
 .link {

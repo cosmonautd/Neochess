@@ -1,5 +1,5 @@
 <template>
-<div id="app" class="medium-container">
+<div id="app" :class="this.$vssWidth >= 992 ? 'medium-container' : ''">
 	<router-view/>
 </div>
 </template>
@@ -7,8 +7,10 @@
 <script>
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
+import VueScreenSize from 'vue-screen-size'
 export default {
-	name: "App"
+	name: "App",
+	mixins: [VueScreenSize.VueScreenSizeMixin],
 }
 </script>
 
@@ -85,4 +87,15 @@ p {
 // 	background-color: #5489B1;
 // 	border-color: #5489B1;
 // }
+
+/* Make scroll bars invisible */
+
+html {
+    scrollbar-width: none; /* For Firefox */
+    -ms-overflow-style: none; /* For Internet Explorer and Edge */
+}
+
+html::-webkit-scrollbar {
+    width: 0px; /* For Chrome, Safari, and Opera */
+}
 </style>
