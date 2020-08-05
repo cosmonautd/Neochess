@@ -27,7 +27,7 @@
 				<li>You can wait for someone else to join your game.</li>
 			</ol>
 			<p>
-				Since neochess is not well known yet, it may take forever for someone to
+				Since neochess is not yet well known, it may take forever for someone to
 				see and join your game. So, for now, it is recommended that you share the
 				url with a friend or invite him to neochess.
 				Created games will be available to join in the front page.
@@ -40,9 +40,7 @@
 				The timers start after black plays its first move. From there, only the
 				gods of chess know what will happen. You can move by clicking on the 
 				origin and destination squares or by just dragging and dropping pieces.
-				You can see past moves by pressing the arrow keys in you keyboard: left
-				shifts back, right shifts forward, down resets to the beginning and up 
-				returns to the last position.
+				You can see past moves by pressing the arrow keys in you keyboard.
 			</p>
 			<div class="vertical-spacing-1"/>
 			<p>

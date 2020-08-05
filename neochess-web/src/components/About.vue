@@ -13,7 +13,8 @@
 		<div class="content">
 			<p>
 				I challenged myself to code a chess server in one week and this is the
-				result. For this, I focused on what really matters, the game itself.
+				result. The core was written in that week, but some improvements are 
+				still being added. Neochess focuses on what really matters, the game itself.
 				There are no accounts and usernames are auto-generated. Only players can
 				access the game, but adding the possibility of watching games is
 				something I'm planning to do in the future. There may be bugs in the 
