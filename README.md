@@ -18,7 +18,7 @@ Clone this repository
 
 ```git clone https://github.com/cosmonautd/Neochess.git```
 
-#### Step 2: Setting up the server
+#### Step 2: Set up the server
 Go to neochess-server, install the dependencies and start.
 
 ```
@@ -26,7 +26,7 @@ npm install
 npm start
 ```
 
-#### Step 3: Setting up the website
+#### Step 3: Set up the website
 Go to neochess-web, clone the forked board, install the dependencies and start.
 
 ```
