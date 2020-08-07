@@ -8,7 +8,9 @@ The website was built using [Vue.js](https://vuejs.org/), along with other free 
 
 The board is a fork from [vue-chessboard](https://github.com/vitogit/vue-chessboard), which is a wrapper for [Chessground](https://github.com/ornicar/chessground) and [chess.js](https://github.com/jhlywa/chess.js). You can see the fork and its modifications [here](https://github.com/cosmonautd/vue-chessboard).
 
-<img src="https://davidborges.xyz/assets/neochess1.jpg" alt="Landing Page" width="225"/> <img src="https://davidborges.xyz/assets/neochess2.jpg" alt="Start or Join a Game" width="225"/> <img src="https://davidborges.xyz/assets/neochess3.jpg" alt="Game Started" width="225"/> <img src="https://davidborges.xyz/assets/neochess4.jpg" alt="Ruy Lopez is on the Board" width="225"/>
+<img src="https://davidborges.xyz/assets/neochess1.jpg" alt="Landing Page" width="300"/> <img src="https://davidborges.xyz/assets/neochess2.jpg" alt="Start or Join a Game" width="300"/>
+
+<img src="https://davidborges.xyz/assets/neochess3.jpg" alt="Game Started" width="300"/> <img src="https://davidborges.xyz/assets/neochess4.jpg" alt="Ruy Lopez is on the Board" width="300"/>
 
 ## Installation
 #### Step 1: Clone
