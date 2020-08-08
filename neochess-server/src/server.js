@@ -113,7 +113,15 @@ const gameOver = async (gameId, player1, player2, resultData) => {
 			'result.description': resultData.result,
 			'result.winner': resultData.winner
 		});
-
+		/* Removes the game from array of joinable games */
+		joinableGames = joinableGames.filter(g => g.gameId.toString() != gameId);
+		/* Broadcasts the updated list of joinable games, filtered by username */
+		for (let u in sockets) {
+			const socketId = sockets[u];
+			io.to(socketId).emit('gamesList', {
+				games: joinableGames.filter(g => g.host !== u)
+			});
+		}
 		/* Emits updateGame event to black */
 		if (player1)
 			io.to(player1+sockets[player1]+gameId).emit('updateGame', {
