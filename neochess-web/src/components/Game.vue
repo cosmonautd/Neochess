@@ -20,11 +20,11 @@
 					</div>
 					<b-row align-h="center">
 						<div>
-						<p :style="{visibility:show_share_message}" class="responsive-font"
-							v-if="this.$vssWidth >= 992">
-							Share the link of this page with a friend to start playing
-							or wait for someone to join this game
-						</p>
+							<p :style="{visibility:show_share_message}" class="responsive-font"
+								v-if="this.$vssWidth >= 992">
+								Share the link of this page with a friend to start playing
+								or wait for someone to join this game
+							</p>
 						</div>
 						<div class='timer spacing-top'>
 							<Timer/>
@@ -257,6 +257,9 @@ export default {
 	font-size: inherit;
 }
 @media screen and (max-width: 575px) {
+	.spacing-top-double {
+		margin-top: 0.1em;
+	}
     .responsive-font {
 		font-size: small;
 	}

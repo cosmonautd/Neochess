@@ -50,7 +50,7 @@ mongo.connect().then(() => {
 });
 
 /* Server constants */
-const TIMESYNC_TIMEOUT = 5000;
+const TIMESYNC_TIMEOUT = 20000;
 
 /* Server memory
 **

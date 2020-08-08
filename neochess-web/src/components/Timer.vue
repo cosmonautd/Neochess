@@ -13,6 +13,13 @@
 		<div class="vertical-spacing-2"></div>
 		<div @click="resign" class="round-corners neochess-option">Resign</div>
 		<!-- <div class="round-corners neochess-option">Offer draw</div> -->
+		<div class="vertical-spacing-2"></div>
+		<div :style="{visibility:disconnected_status,color:'red'}">
+			<p class="responsive-font">
+			Trying to reconnect...
+			</p>
+		<img src="../assets/connecting.gif" width="20%">
+		</div>
 	</div>
 	<div v-else>
 		<b-container fluid class="bv-example-row">
@@ -30,6 +37,11 @@
 					<!-- <div class="round-corners neochess-option">
 						Offer draw
 					</div> -->
+					<p :style="{visibility:disconnected_status, color:'red'}"
+					class="responsive-font">
+						Trying to reconnect...
+						<img src="../assets/connecting.gif" width="50%">
+					</p>
 				</b-col>
 			</b-row>
 		</b-container>
@@ -47,7 +59,8 @@ export default {
 	data() {
 		return {
 			timer: null,
-			lastMoveUser: null
+			lastMoveUser: null,
+			connected: true
 		}
 	},
 	computed: {
@@ -71,6 +84,9 @@ export default {
 		},
 		opponentTime() {
 			return this.secondsToMinutes(this.$store.state.time.t2);
+		},
+		disconnected_status() {
+			return this.connected ? 'hidden' : 'visible';
 		}
 	},
 	methods: {
@@ -85,6 +101,12 @@ export default {
 	},
 	sockets: {
 		listener: {
+			connect: function () {
+				this.connected = true;
+			},
+			disconnect: function () {
+				this.connected = false;
+			},
 			timesync: function (sync) {
 				if (sync.gameId === this.$store.state.game._id) {
 					const username = this.username;
@@ -119,21 +141,29 @@ export default {
 	background-color: #333;
 	cursor: pointer;
 }
+.responsive-font {
+	font-size: inherit;
+}
 @media screen and (max-width: 991px) {
     .vertical-spacing {
 		height: 1em;
 	}
 	.neochess-time {
-		font-size: large;
+		font-size: normal;
 	}
 	.neochess-username {
-		font-size: medium;
+		font-size: small;
 	}
 	.neochess-option {
 		display: inherit;
 		padding: 0.4em 0.9em 0.4em 0.9em;
-		margin: 0em 0em 0em 0em;
+		margin: 0em 0em 0.5em 0em;
 		font-size: small;
+	}
+}
+@media screen and (max-width: 575px) {
+    .responsive-font {
+		font-size: x-small;
 	}
 }
 </style>
