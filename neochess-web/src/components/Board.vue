@@ -187,6 +187,8 @@ export default {
 	sockets: {
 		listener: {
 			moved: function (movedata) {
+				const ack = {gameId: movedata.gameId, username: movedata.username};
+				this.$socket.emit('moveAck', ack);
 				if (movedata.username != this.$store.state.username) {
 					this.historyMode = false;
 					this.game.move(movedata.move);

@@ -68,6 +68,8 @@ let timers = {};
 let timesync = {};
 let currentGameId = {};
 let joinableGames = [];
+let playerReceivedLastmove = {};
+let lastMoveFromGame = {};
 
 /* Available time controls */
 const seconds = {
@@ -231,6 +233,20 @@ io.on('connection', (socket) => {
 						const whiteUsername = game.players.white.username;
 						const blackUsername = game.players.black.username;
 						userTimeSync(username, whiteUsername, blackUsername);
+					}
+
+					if (!playerReceivedLastmove[username+gameId]) {
+
+						/* Gets user room */
+						const userRoom = username+sockets[username]+gameId;
+
+						/* Emits move to the user */
+						io.to(userRoom).emit('moved', lastMoveFromGame[gameId]);
+
+						/* Emits updateGame event to the user */
+						io.to(userRoom).emit('updateGame', {
+							game
+						});
 					}
 				}
 	
@@ -658,6 +674,11 @@ io.on('connection', (socket) => {
 			const opponent = username === whiteUsername ? blackUsername : whiteUsername;
 			const orientation = username === whiteUsername ? 'white' : 'black';
 
+			/* Save last move from game */
+			lastMoveFromGame[gameId] = movedata;
+			playerReceivedLastmove[blackUsername+gameId] = false;
+			playerReceivedLastmove[whiteUsername+gameId] = false;
+
 			/* Emits move to the game room */
 			io.to(gameId).emit('moved', movedata);
 
@@ -790,6 +811,25 @@ io.on('connection', (socket) => {
 
 			if (timesync[gameId])
 				timesync[gameId].lastTimeSync[username] = new Date();
+
+			return;
+
+		} catch (error) {
+
+			/* Logs the error */
+			console.log(error);
+
+		}
+	});
+
+	socket.on('moveAck', async (ack) => {
+
+		try {
+
+			const username = users[socket.id];
+			const gameId = currentGameId[username];
+
+			playerReceivedLastmove[username+gameId] = true;
 
 			return;
 
