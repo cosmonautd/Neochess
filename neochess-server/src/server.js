@@ -840,6 +840,26 @@ io.on('connection', (socket) => {
 
 		}
 	});
+
+	socket.on('updatedShapes', async (data) => {
+
+		try {
+
+			const username = users[socket.id];
+			const gameId = currentGameId[username];
+
+			io.to(gameId).emit('syncShapes', data);
+
+			return;
+
+		} catch (error) {
+
+			/* Logs the error */
+			console.log(error);
+
+		}
+	});
+
 });
 
 /* Starts the server */

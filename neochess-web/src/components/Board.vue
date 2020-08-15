@@ -8,7 +8,8 @@ export default {
 		return {
 			historyMode: false,
 			historyIndex: 0,
-			historyBoard: new Chess()
+			historyBoard: new Chess(),
+			shapes: []
 		}
 	},
 	computed: {
@@ -27,6 +28,15 @@ export default {
 					viewOnly: false
 				})
 			}
+		},
+		shapes() {
+			const data = {
+				username: this.$store.state.username,
+				gameId: this.$store.state.game._id,
+				shapes: this.shapes
+			};
+			console.log('syncing shapes')
+			this.$socket.emit('updatedShapes', data);
 		}
 	},
 	methods: {
@@ -182,6 +192,11 @@ export default {
 					}
 				}
 			}
+		},
+		updateShapes() {
+			if (JSON.stringify(this.shapes) 
+				!== JSON.stringify(this.board.state.drawable.shapes))
+				this.shapes = this.board.state.drawable.shapes;
 		}
 	},
 	sockets: {
@@ -241,6 +256,10 @@ export default {
 				this.board.set({
 					viewOnly: true
 				});
+			},
+			syncShapes: function(data) {
+				if (data.username != this.$store.state.username)
+					this.board.setShapes(data.shapes)
 			}
 		}
 	},
@@ -298,6 +317,9 @@ export default {
 				});
 			}
 		}
+		setInterval(async () => {
+			this.updateShapes();
+		}, 100);
 	}
 }
 </script>
