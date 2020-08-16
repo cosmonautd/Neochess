@@ -845,8 +845,8 @@ io.on('connection', (socket) => {
 
 		try {
 
-			const username = users[socket.id];
-			const gameId = currentGameId[username];
+			const username = data.username;
+			const gameId = data.gameId;
 
 			io.to(gameId).emit('syncShapes', data);
 
