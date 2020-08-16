@@ -9,7 +9,9 @@ export default {
 			historyMode: false,
 			historyIndex: 0,
 			historyBoard: new Chess(),
-			shapes: []
+			userShapes: [],
+			opponentShapes: []
+			
 		}
 	},
 	computed: {
@@ -29,11 +31,11 @@ export default {
 				})
 			}
 		},
-		shapes() {
+		userShapes() {
 			const data = {
 				username: this.$store.state.username,
 				gameId: this.$store.state.game._id,
-				shapes: this.shapes
+				shapes: this.userShapes
 			};
 			console.log('syncing shapes')
 			this.$socket.emit('updatedShapes', data);
@@ -194,9 +196,14 @@ export default {
 			}
 		},
 		updateShapes() {
-			if (JSON.stringify(this.shapes) 
-				!== JSON.stringify(this.board.state.drawable.shapes))
-				this.shapes = this.board.state.drawable.shapes;
+			if (JSON.stringify(this.userShapes)
+				!== JSON.stringify(this.board.state.drawable.shapes)) {
+					if (this.board.state.drawable.shapes.length == 0
+						&& this.userShapes.length > 0) {
+							this.board.setAutoShapes([]);
+						}
+					this.userShapes = this.board.state.drawable.shapes;
+				}
 		}
 	},
 	sockets: {
@@ -258,8 +265,10 @@ export default {
 				});
 			},
 			syncShapes: function(data) {
-				if (data.username != this.$store.state.username)
-					this.board.setShapes(data.shapes)
+				if (data.username != this.$store.state.username) {
+					this.opponentShapes = data.shapes;
+					this.board.setAutoShapes(this.opponentShapes);
+				}
 			}
 		}
 	},
