@@ -37,7 +37,6 @@ export default {
 				gameId: this.$store.state.game._id,
 				shapes: this.userShapes
 			};
-			console.log('syncing shapes')
 			this.$socket.emit('updatedShapes', data);
 		}
 	},
