@@ -2,9 +2,9 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 import createPersistedState from 'vuex-persistedstate'
 import VueSocketIO from 'vue-socket.io'
+import { BootstrapVue, IconsPlugin } from 'bootstrap-vue'
 // import axios from 'axios'
 // import VueAxios from 'vue-axios'
-import { BootstrapVue, IconsPlugin } from 'bootstrap-vue'
 
 import App from './App.vue'
 import router from './router'
@@ -20,15 +20,12 @@ const store = new Vuex.Store({
 		status: {
 			code: 'loading',
 			message: 'loading...',
-			win: false,
-			draw: false,
-			lose: false,
-			result: null
 		},
 		time: {
 			t1: null,
 			t2: null
-		}
+		},
+		watcher: false
 	},
 	mutations: {
 		update_username (state, username) {
@@ -37,26 +34,14 @@ const store = new Vuex.Store({
 		update_game (state, game) {
 			state.game = game;
 		},
-		update_status_code (state, status_code) {
-			state.status.code = status_code;
-		},
-		update_status_message (state, status_message) {
-			state.status.message = status_message;
-		},
-		update_status_win (state, status_win) {
-			state.status.win = status_win;
-		},
-		update_status_draw (state, status_draw) {
-			state.status.draw = status_draw;
-		},
-		update_status_lose (state, status_lose) {
-			state.status.lose = status_lose;
-		},
-		update_status_result (state, status_result) {
-			state.status.result = status_result;
+		update_status (state, status) {
+			state.status = status;
 		},
 		update_time (state, time) {
 			state.time = time;
+		},
+		update_watcher (state, watcher) {
+			state.watcher = watcher;
 		}
 	},
 	plugins: [
@@ -79,8 +64,6 @@ Vue.use(new VueSocketIO({
 	}
 }));
 
-// Vue.use(VueAxios, axios)
-
 Vue.use(BootstrapVue);
 Vue.use(IconsPlugin);
 
@@ -95,6 +78,8 @@ Vue.use(sounds, store, {
 		{name:"check", url:"https://davidborges.xyz/assets/multimedia_game_sound_synth_tone_bold_error_52992.mp3"},
 	]
 });
+
+// Vue.use(VueAxios, axios)
 
 new Vue({
 	router,

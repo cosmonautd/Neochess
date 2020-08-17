@@ -77,7 +77,7 @@ export default {
 		newGame(timeControl) {
 			this.$socket.emit('newGame', {timeControl});
 		},
-		go_to_new_game(game) {
+		goToNewGame(game) {
 			this.$store.commit('update_game', game);
 			this.$router.push({ name: 'game', params: {
 				gameId: this.$store.state.game._id
@@ -104,7 +104,7 @@ export default {
 				this.games = data.games;
 			},
 			gameCreated: function (data) {
-				this.go_to_new_game(data.game);
+				this.goToNewGame(data.game);
 				this.$store.commit('update_time', {
 					t1: seconds[data.game.timeControl.string],
 					t2: seconds[data.game.timeControl.string]
@@ -114,13 +114,11 @@ export default {
 	},
 	created() {
 		this.$store.commit('update_game', null);
-		this.$store.commit('update_status_code', 'loading');
-		this.$store.commit('update_status_message', 'loading...');
-		this.$store.commit('update_status_win', false);
-		this.$store.commit('update_status_draw', false);
-		this.$store.commit('update_status_lose', false);
-		this.$store.commit('update_status_result', null);
-		this.$store.commit('update_time', {t1: null, t2: null});
+		this.$store.commit('update_status', {
+			code: 'loading',
+			message: 'loading...'
+		});
+		this.$store.commit('update_time', {white: null, black: null});
 	},
 	mounted() {
 		this.$socket.emit('getGames');

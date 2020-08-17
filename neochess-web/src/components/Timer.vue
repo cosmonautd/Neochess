@@ -2,13 +2,13 @@
 <div id="neochess-timer">
 	<div v-if="this.$vssWidth >= 992">
 		<div>
-			<div class="neochess-time round-corners">{{opponentTime}}</div>
-			<div class="neochess-username">{{opponent}}</div>
+			<div class="neochess-time round-corners">{{player2Time}}</div>
+			<div class="neochess-username">{{player2}}</div>
 		</div>
 		<div class="vertical-spacing-2"></div>
 		<div>
-			<div class="neochess-username">{{username}}</div>
-			<div class="neochess-time round-corners">{{userTime}}</div>
+			<div class="neochess-username">{{player1}}</div>
+			<div class="neochess-time round-corners">{{player1Time}}</div>
 		</div>
 		<div class="vertical-spacing-2"></div>
 		<div @click="resign" class="round-corners neochess-option">Resign</div>
@@ -25,12 +25,12 @@
 		<b-container fluid class="bv-example-row">
 			<b-row align-h="center">
 				<b-col>
-					<div class="neochess-time round-corners">{{opponentTime}}</div>
-					<div class="neochess-username">{{opponent}}</div>
+					<div class="neochess-time round-corners">{{player2Time}}</div>
+					<div class="neochess-username">{{player2}}</div>
 				</b-col>
 				<b-col>
-					<div class="neochess-time round-corners">{{userTime}}</div>
-					<div class="neochess-username">{{username}}</div>
+					<div class="neochess-time round-corners">{{player1Time}}</div>
+					<div class="neochess-username">{{player1}}</div>
 				</b-col>
 				<b-col>
 					<div @click="resign" class="round-corners neochess-option">Resign</div>
@@ -64,10 +64,15 @@ export default {
 		}
 	},
 	computed: {
-		username() {
-			return this.$store.state.username;
+		player1() {
+			const username = this.$store.state.username;
+			const white = this.$store.state.game.players.white.username;
+			const black = this.$store.state.game.players.black.username;
+			if (username === white) return white;
+			else if (username === black) return black;
+			else return white;
 		},
-		opponent() {
+		player2() {
 			const white = this.$store.state.game.players.white.username;
 			const black = this.$store.state.game.players.black.username;
 			if (this.orientation === 'white' && black !== null) return black;
@@ -75,14 +80,16 @@ export default {
 			else return 'waiting for opponent...';
 		},
 		orientation() {
-			if (this.$store.state.game.players.white.username === this.username)
-				return 'white';
-			else return 'black';
+			const username = this.$store.state.username;
+			const black = this.$store.state.game.players.black.username;
+			if (username === black)
+				return 'black';
+			else return 'white';
 		},
-		userTime() {
+		player1Time() {
 			return this.secondsToMinutes(this.$store.state.time.t1);
 		},
-		opponentTime() {
+		player2Time() {
 			return this.secondsToMinutes(this.$store.state.time.t2);
 		},
 		disconnected_status() {
@@ -109,13 +116,16 @@ export default {
 			},
 			timesync: function (sync) {
 				if (sync.gameId === this.$store.state.game._id) {
-					const username = this.username;
-					const opponent = this.opponent;
+					const player1 = this.player1;
+					const player2 = this.player2;
 					this.$store.commit('update_time', {
-						t1: sync[username],
-						t2: sync[opponent] !== undefined ? sync[opponent] : sync[username]
+						t1: sync[player1],
+						t2: sync[player2] !== undefined ? sync[player2] : sync[player1]
 					});
-					const ack = {gameId: sync.gameId, username};
+					const ack = {
+						gameId: sync.gameId,
+						username: this.$store.state.username
+					};
 					this.$socket.emit('syncAck', ack);
 				}
 			},

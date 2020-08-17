@@ -481,53 +481,90 @@ io.on('connection', (socket) => {
 			/* Searches for the game using gameId */
 			let game = await getGame(gameId);
 
+			let watcher = false;
 			if (!game.state.joinable || game.state.finished || game.host === username) {
-
-				/* Returns COULD_NOT_JOIN error */
-				io.to(socket.id).emit('gameJoined', {
-					error: {
-						code: 'COULD_NOT_JOIN',
-						message: 'could not join'
-					}
-				});
-
-				/* Event is logged */
-				const loginfo = {
-					username, gameId,
-					white: game.players.white.username,
-					black: game.players.black.username
-				};
-				logger.log({
-					level: 'info',
-					message: `Failed join attempt: ${log.dict2log(loginfo)}`
-				});
-
-				return;
+				watcher = true;
 			}
 
 			/* Defines new player orientation and opponent */
-			const orientation = game.players.white.username ? 'black' : 'white';
-			const opponentOrientation = orientation === 'black' ? 'white' : 'black';
+			let orientation;
+			if (watcher) orientation = 'white'
+			else orientation = game.players.white.username ? 'black' : 'white';
 
 			/**
 			 * Generates info to update the game in the database
 			 * Also defines opponent
 			 */
-			let update;
-			let opponent;
-			if (orientation === 'white') {
-				update = {'players.white.username': username};
-				opponent = game.players.black.username;
-			} 
-			else if (orientation === 'black') {
-				update = {'players.black.username': username};
-				opponent = game.players.white.username;
-			}
-			update['guest'] = username;
-			update['state.joinable'] = false;
+			
+			if (!watcher) {
 
-			/* Updates the game in the database */
-			game = await updateGame(gameId, update);
+				let update;
+				let opponent;
+
+				if (orientation === 'white') {
+					update = {'players.white.username': username};
+					opponent = game.players.black.username;
+				} 
+				else if (orientation === 'black') {
+					update = {'players.black.username': username};
+					opponent = game.players.white.username;
+				}
+				update['guest'] = username;
+				update['state.joinable'] = false;
+	
+				/* Updates the game in the database */
+				game = await updateGame(gameId, update);
+
+				/* Emits update game event to opponent */
+				io.to(opponent+sockets[opponent]+gameId).emit('updateGame', {game});
+
+				/* A timer is assigned to the joining user for this game */
+				timers[username+gameId] = {
+					loop: null,
+					time: seconds[game.timeControl.string]
+				};
+
+				const whiteUsername = game.players.white.username;
+				const blackUsername = game.players.black.username;
+
+				/* Updates time sync for the game room */
+				if (timesync[gameId]) {
+					clearInterval(timesync[gameId].mainLoop);
+					clearInterval(timesync[gameId].ackLoop);
+				}
+				let lastTimeSync = timesync[gameId].lastTimeSync;
+				lastTimeSync[username] = new Date();
+
+				timesync[gameId] = {
+					mainLoop: setInterval(() => {
+						gameTimeSync(gameId, whiteUsername, blackUsername);
+					}, 500),
+					lastTimeSync,
+					ackLoop: setInterval(async () => {
+						const now = new Date();
+						const lastTimeSyncW = timesync[gameId].lastTimeSync[whiteUsername];
+						const lastTimeSyncB = timesync[gameId].lastTimeSync[blackUsername];
+						if (Math.abs(now.getTime() - lastTimeSyncW.getTime()) > TIMESYNC_TIMEOUT) {
+							/* White has disconnected from the game */
+							logger.log({
+								level: 'info',
+								message: `${whiteUsername} disconnected from the game ${gameId}`
+							});
+							const resultData = {result: 'abandonment', winner: blackUsername};
+							await gameOver(gameId, whiteUsername, blackUsername, resultData);
+						}
+						if (Math.abs(now.getTime() - lastTimeSyncB.getTime()) > TIMESYNC_TIMEOUT) {
+							/* Black has disconnected from the game */
+							logger.log({
+								level: 'info',
+								message: `${blackUsername} disconnected from the game ${gameId}`
+							});
+							const resultData = {result: 'abandonment', winner: whiteUsername};
+							await gameOver(gameId, whiteUsername, blackUsername, resultData);
+						}
+					}, TIMESYNC_TIMEOUT),
+				};
+			}
 
 			/* User leaves previous game */
 			const previousGameId = currentGameId[username];
@@ -542,57 +579,7 @@ io.on('connection', (socket) => {
 			currentGameId[username] = gameId;
 
 			/* Game parameters are emitted to the user */
-			io.to(socket.id).emit('gameJoined', {game});
-
-			/* Emits update game event to opponent */
-			io.to(opponent+sockets[opponent]+gameId).emit('updateGame', {game});
-
-			/* A timer is assigned to the joining user for this game */
-			timers[username+gameId] = {
-				loop: null,
-				time: seconds[game.timeControl.string]
-			};
-
-			const whiteUsername = game.players.white.username;
-			const blackUsername = game.players.black.username;
-
-			/* Updates time sync for the game room */
-			if (timesync[gameId]) {
-				clearInterval(timesync[gameId].mainLoop);
-				clearInterval(timesync[gameId].ackLoop);
-			}
-			let lastTimeSync = timesync[gameId].lastTimeSync;
-			lastTimeSync[username] = new Date();
-
-			timesync[gameId] = {
-				mainLoop: setInterval(() => {
-					gameTimeSync(gameId, whiteUsername, blackUsername);
-				}, 500),
-				lastTimeSync,
-				ackLoop: setInterval(async () => {
-					const now = new Date();
-					const lastTimeSyncW = timesync[gameId].lastTimeSync[whiteUsername];
-					const lastTimeSyncB = timesync[gameId].lastTimeSync[blackUsername];
-					if (Math.abs(now.getTime() - lastTimeSyncW.getTime()) > TIMESYNC_TIMEOUT) {
-						/* White has disconnected from the game */
-						logger.log({
-							level: 'info',
-							message: `${whiteUsername} disconnected from the game ${gameId}`
-						});
-						const resultData = {result: 'abandonment', winner: blackUsername};
-						await gameOver(gameId, whiteUsername, blackUsername, resultData);
-					}
-					if (Math.abs(now.getTime() - lastTimeSyncB.getTime()) > TIMESYNC_TIMEOUT) {
-						/* Black has disconnected from the game */
-						logger.log({
-							level: 'info',
-							message: `${blackUsername} disconnected from the game ${gameId}`
-						});
-						const resultData = {result: 'abandonment', winner: whiteUsername};
-						await gameOver(gameId, whiteUsername, blackUsername, resultData);
-					}
-				}, TIMESYNC_TIMEOUT),
-			};
+			io.to(socket.id).emit('gameJoined', {game, watcher});
 
 			/* If game is joined, removes it from array of joinable games */
 			joinableGames = joinableGames.filter(g => g.gameId.toString() != gameId);
@@ -783,16 +770,22 @@ io.on('connection', (socket) => {
 
 			let game = await getGame(gameId);
 
-			if (game.state.finished) return;
+			const white = game.players.white.username;
+			const black = game.players.black.username;
+			if (username === white || username === black) {
 
-			const result = 'resignation';
-			const winner = username === game.players.white.username ? 
-				game.players.black.username : game.players.white.username;
+				if (game.state.finished) return;
 
-			const resultData = {result, winner};
-			await gameOver(gameId, username, winner, resultData);
+				const result = 'resignation';
+				const winner = username === game.players.white.username ? 
+					game.players.black.username : game.players.white.username;
 
-			return;
+				const resultData = {result, winner};
+				await gameOver(gameId, username, winner, resultData);
+
+				return;
+
+			} else return;
 
 		} catch (error) {
 

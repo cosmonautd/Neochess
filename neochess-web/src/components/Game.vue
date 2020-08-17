@@ -58,7 +58,7 @@
 			<b-container fluid class="bv-example-row">
 				<b-row align-h="center" class="neochess-row">
 					<b-col align-self="center">
-						<p v-if="status.result === 'checkmate'">
+						<!-- <p v-if="status.result === 'checkmate'">
 							Checkmate!
 						</p>
 						<p v-if="status.result === 'ontime'">
@@ -93,7 +93,10 @@
 						<div class="vertical-spacing-1"></div>
 						<img v-if="status.win" src="../assets/icons8-crown-64.png"/>
 						<img v-if="status.draw" src="../assets/icons8-handshake-64.png"/>
-						<img v-if="status.lose" src="../assets/icons8-explosive-64.png"/>
+						<img v-if="status.lose" src="../assets/icons8-explosive-64.png"/> -->
+						<p v-if="true">
+							Game over!
+						</p>
 					</b-col>
 				</b-row>
 			</b-container>
@@ -137,9 +140,9 @@ export default {
 			return this.$store.state.username;
 		},
 		orientation() {
-			if (this.$store.state.game.players.white.username === this.username)
-				return 'white';
-			else return 'black';
+			if (this.$store.state.game.players.black.username === this.username)
+				return 'black';
+			else return 'white';
 		},
 		css_vars() {
 			return {
@@ -164,9 +167,15 @@ export default {
 			this.neochess_game += 1;
 			if (this.$store.state.game) {
 				if (this.$store.state.status.code !== 'over')
-					this.$store.commit('update_status_code', 'success');
+					this.$store.commit('update_status', {
+						code: 'success',
+						message: 'success'
+					});
 			}
-			else this.$store.commit('update_status_code', 'failed');
+			else this.$store.commit('update_status', {
+				code: 'failed',
+				message: 'failed'
+			});
 		},
 		compute_board_size() {
 			const w = this.$vssWidth;
@@ -210,23 +219,20 @@ export default {
 						t1: seconds[data.game.timeControl.string],
 						t2: seconds[data.game.timeControl.string]
 					});
+					this.$store.commit('update_watcher', data.watcher);
 					this.load();
 				} else {
-					this.$store.commit('update_status_code', data.error.code);
-					this.$store.commit('update_status_message', data.error.message);
+					this.$store.commit('update_status', {
+						code: data.error.code,
+						message: data.error.message
+					});
 				}
 			},
-			gameOver: function (data) {
-				this.$store.commit('update_status_code', 'over');
-				this.$store.commit('update_status_result', data.result);
-				
-				if (data.winner === this.username) {
-					this.$store.commit('update_status_win', true);
-				}
-				else if (data.result.split('.')[0] === 'draw') {
-					this.$store.commit('update_status_draw', true);
-				} 
-				else this.$store.commit('update_status_lose', true);
+			gameOver: function () {
+				this.$store.commit('update_status', {
+					code: 'over',
+					message: 'game over'
+				});
 				this.$modal.show('game-over-modal');
 			}
 		}

@@ -325,6 +325,12 @@ export default {
 				});
 			}
 		}
+		if (this.$store.state.watcher === true) {
+			this.board.set({
+				viewOnly: true
+			});
+		}
+
 		setInterval(async () => {
 			this.updateShapes();
 		}, 100);
