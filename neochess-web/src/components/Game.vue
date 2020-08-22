@@ -53,50 +53,49 @@
 	<div v-else>
 		<p class="neochess-title">{{status.message}}</p>
 	</div>
-	<modal name="game-over-modal" width="80%" :maxWidth="300" :adaptive="true">
+	<modal name="game-over-modal" width="80%" :maxWidth="300" :adaptive="true" v-if="game">
 		<div class="neochess-modal">
 			<b-container fluid class="bv-example-row">
 				<b-row align-h="center" class="neochess-row">
 					<b-col align-self="center">
-						<!-- <p v-if="status.result === 'checkmate'">
+						<div v-if="result.description === 'checkmate'">
 							Checkmate!
-						</p>
-						<p v-if="status.result === 'ontime'">
+						</div>
+						<div v-if="result.description === 'ontime'">
 							Time is up!
-						</p>
-						<p v-if="status.result === 'draw.stalemate'">
-							Stalemate
-						</p>
-						<p v-if="status.result === 'draw.threefold_repetition'">
-							Threefold repetition
-						</p>
-						<p v-if="status.result === 'draw.insufficient_material'">
-							Insufficient material
-						</p>
-						<p v-if="status.win && status.result === 'resignation'">
-							Your opponent resigned!
-						</p>
-						<p v-if="status.lose && status.result === 'resignation'">
-							You resigned
-						</p>
-						<p v-if="status.win && status.result === 'abandonment'">
-							Your opponent abandoned the game!
-						</p>
-						<p v-if="status.lose && status.result === 'abandonment'">
-							You abandoned the game
-						</p>
-						<p v-if="status.win">You won</p>
-						<p v-if="status.draw">Draw</p>
-						<p v-if="status.lose && status.result !== 'resignation'">
-							You lost
-						</p>
+						</div>
+						<div v-if="result.description === 'draw.stalemate'">
+							Stalemate!
+						</div>
+						<div v-if="result.description === 'draw.threefold_repetition'">
+							Threefold repetition!
+						</div>
+						<div v-if="result.description === 'draw.insufficient_material'">
+							Insufficient material!
+						</div>
+						<div v-if="result.description === 'checkmate' || result.description === 'ontime'">
+							{{result.winner}} wins
+						</div>
+						<div v-if="result.description === 'resignation'
+							&& result.winner === game.players.white.username">
+							<p>{{game.players.black.username}} resigned</p>
+							<p>{{game.players.white.username}} wins</p>
+						</div>
+						<div v-if="result.description === 'resignation'
+							&& result.winner === game.players.black.username">
+							<p>{{game.players.white.username}} resigned</p>
+							<p>{{game.players.black.username}} wins</p>
+						</div>
+						<div v-if="result.description === 'abandonment'
+							&& result.winner === game.players.white.username">
+							{{game.players.black.username}} abandoned the game
+						</div>
+						<div v-if="result.description === 'abandonment'
+							&& result.winner === game.players.black.username">
+							{{game.players.white.username}} abandoned the game
+						</div>
+						<div v-if="draw">It's a draw</div>
 						<div class="vertical-spacing-1"></div>
-						<img v-if="status.win" src="../assets/icons8-crown-64.png"/>
-						<img v-if="status.draw" src="../assets/icons8-handshake-64.png"/>
-						<img v-if="status.lose" src="../assets/icons8-explosive-64.png"/> -->
-						<p v-if="true">
-							Game over!
-						</p>
 					</b-col>
 				</b-row>
 			</b-container>
@@ -140,7 +139,7 @@ export default {
 			return this.$store.state.username;
 		},
 		orientation() {
-			if (this.$store.state.game.players.black.username === this.username)
+			if (this.game.players.black.username === this.username)
 				return 'black';
 			else return 'white';
 		},
@@ -153,11 +152,21 @@ export default {
 		status() {
 			return this.$store.state.status;
 		},
+		game() {
+			return this.$store.state.game;
+		},
+		result() {
+			return this.$store.state.game.result;
+		},
+		draw() {
+			return this.result.description ?
+				this.result.description.startsWith('draw') : false;
+		},
 		show_share_message() {
 			if (this.orientation === 'white' &&
-				this.$store.state.game.players.black.username === null) return 'visible';
+				this.game.players.black.username === null) return 'visible';
 			if (this.orientation === 'black' &&
-				this.$store.state.game.players.white.username === null) return 'visible';
+				this.game.players.white.username === null) return 'visible';
 			else return 'hidden';
 		}
 	},
@@ -165,7 +174,7 @@ export default {
 		load() {
 			this.defined_board_size = this.compute_board_size();
 			this.neochess_game += 1;
-			if (this.$store.state.game) {
+			if (this.game) {
 				if (this.$store.state.status.code !== 'over')
 					this.$store.commit('update_status', {
 						code: 'success',
@@ -188,7 +197,7 @@ export default {
 			event.returnValue = "";
 		},
 		join_game() {
-			if (!this.$store.state.game) {
+			if (!this.game) {
 				this.$socket.emit('joinGame', {gameId: this.$route.params.gameId});
 			} else {
 				this.load();
