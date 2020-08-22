@@ -124,17 +124,7 @@ const gameOver = async (gameId, player1, player2, resultData) => {
 				games: joinableGames.filter(g => g.host !== u)
 			});
 		}
-		/* Emits updateGame event to black */
-		if (player1)
-			io.to(player1+sockets[player1]+gameId).emit('updateGame', {
-				game
-			});
-
-		/* Emits updateGame event to white */
-		if (player2)
-			io.to(player2+sockets[player2]+gameId).emit('updateGame', {
-				game
-			});
+		io.to(gameId).emit('updateGame', {game});
 	}
 }
 
