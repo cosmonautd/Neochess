@@ -38,9 +38,10 @@
 
 		<div class="vertical-spacing-3"></div>
 
+		<p class="neochess-title"> Join a game </p>
+		<div class="vertical-spacing-1"/>
+
 		<div v-if="games.length > 0">
-			<p class="neochess-title"> Join a game </p>
-			<div class="vertical-spacing-1"/>
 			<GameList
 				:games="games"
 				action="Join"
@@ -48,15 +49,13 @@
 		</div>
 
 		<div v-if="watchableGames.length > 0">
-			<div class="vertical-spacing-1"></div>
-			<p class="neochess-title"> Watch a game </p>
-			<div class="vertical-spacing-1"/>
 			<GameList
 				:games="watchableGames"
 				action="Watch"
 			/>
 		</div>
 
+		<div class="vertical-spacing-4"></div>
 		<div class="vertical-spacing-2"></div>
 		<div class="footer round-corners" @click="howto">
 			how neochess works

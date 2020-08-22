@@ -1,11 +1,7 @@
 <template>
-<!-- <div id="neochess-game" :key="neochess_game" tabindex="0"
-	v-on:keyup.right="historyForwards"
-	v-on:keyup.left="historyBackwards"
-	v-on:keyup.up="historyCurrent"
-	v-on:keyup.down="historyBeginning" > -->
 <div id="neochess-game" :key="neochess_game">
-	<div v-if="status.code === 'success' || status.code === 'over'" class="spacing-top-double">
+	<div v-if="status.code === 'success' || status.code === 'over'"
+		class="spacing-top-double">
 		<b-container fluid class="bv-example-row">
 			<b-row align-h="center">
 				<b-col align-self="center">
@@ -16,14 +12,17 @@
 					</b-row>
 					<div v-if="this.$vssWidth < 992" class="responsive-font">
 						<span>You are connected as </span>
-						<span class="neochess-title">{{ this.$store.state.username }}</span>
+						<span class="neochess-title">
+							{{ this.$store.state.username }}
+						</span>
 					</div>
 					<b-row align-h="center">
 						<div>
-							<p :style="{visibility:show_share_message}" class="responsive-font"
+							<p :style="{visibility:show_share_message}"
+								class="responsive-font"
 								v-if="this.$vssWidth >= 992">
-								Share the link of this page with a friend to start playing
-								or wait for someone to join this game
+								Share the link of this page with a friend to start 
+								playing or wait for someone to join this game
 							</p>
 						</div>
 						<div class='timer spacing-top'>
@@ -34,7 +33,9 @@
 				<b-col sm="12" md="12" lg="9" xl="9" class="responsive-padding-left">
 					<p v-if="this.$vssWidth >= 992" class="responsive-font">
 						<span>You are connected as </span>
-						<span class="neochess-title">{{ this.$store.state.username }}</span>
+						<span class="neochess-title">
+							{{ this.$store.state.username }}
+						</span>
 					</p>
 					<Board
 						class='spacing-top'
@@ -53,7 +54,8 @@
 	<div v-else>
 		<p class="neochess-title">{{status.message}}</p>
 	</div>
-	<modal name="game-over-modal" width="80%" :maxWidth="300" :adaptive="true" v-if="game">
+	<modal name="game-over-modal" width="80%" :maxWidth="300" :adaptive="true" 
+		v-if="game">
 		<div class="neochess-modal">
 			<b-container fluid class="bv-example-row">
 				<b-row align-h="center" class="neochess-row">
@@ -73,18 +75,22 @@
 						<div v-if="result.description === 'draw.insufficient_material'">
 							Insufficient material!
 						</div>
-						<div v-if="result.description === 'checkmate' || result.description === 'ontime'">
-							{{result.winner}} wins
+						<div v-if="draw">It's a draw</div>
+						<div v-if="result.description === 'checkmate' 
+								|| result.description === 'ontime'">
+							<p v-if="watcher">{{result.winner}} wins</p>
+							<p v-else-if="result.winner === username">
+								You won
+							</p>
+							<p v-else>You lost</p>
 						</div>
 						<div v-if="result.description === 'resignation'
 							&& result.winner === game.players.white.username">
 							<p>{{game.players.black.username}} resigned</p>
-							<p>{{game.players.white.username}} wins</p>
 						</div>
 						<div v-if="result.description === 'resignation'
 							&& result.winner === game.players.black.username">
 							<p>{{game.players.white.username}} resigned</p>
-							<p>{{game.players.black.username}} wins</p>
 						</div>
 						<div v-if="result.description === 'abandonment'
 							&& result.winner === game.players.white.username">
@@ -94,8 +100,11 @@
 							&& result.winner === game.players.black.username">
 							{{game.players.white.username}} abandoned the game
 						</div>
-						<div v-if="draw">It's a draw</div>
 						<div class="vertical-spacing-1"></div>
+						<img v-if="result.winner === username"
+							src="../assets/icons8-crown-64.png"/>
+						<img v-else-if="draw" src="../assets/icons8-handshake-64.png"/>
+						<img v-else src="../assets/icons8-explosive-64.png"/>
 					</b-col>
 				</b-row>
 			</b-container>
@@ -168,6 +177,9 @@ export default {
 			if (this.orientation === 'black' &&
 				this.game.players.white.username === null) return 'visible';
 			else return 'hidden';
+		},
+		watcher() {
+			return this.$store.state.watcher;
 		}
 	},
 	methods: {

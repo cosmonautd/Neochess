@@ -3,10 +3,10 @@
 	<p v-if="games.length < 1" class="empty-table">
 		No games
 	</p>
-	<table v-else>
+	<table v-else class="neochess-table">
 		<tbody>
 			<tr v-for="game in games" :key="game.gameId">
-				<td class="left-round-corners">{{ game.host }}</td>
+				<td style="width:60%" class="left-round-corners">{{ game.host }}</td>
 				<td>{{ game.timeControl }}</td>
 				<td class="right-round-corners">
 					<button @click="joinGame(game.gameId)" class="round-corners">
@@ -63,5 +63,8 @@ table {
 }
 .right-round-corners {
 	border-radius: 0px 15px 15px 0px;
+}
+.neochess-table {
+	margin-bottom: -1em;
 }
 </style>
