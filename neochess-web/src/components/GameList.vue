@@ -10,11 +10,10 @@
 				<td>{{ game.timeControl }}</td>
 				<td class="right-round-corners">
 					<button @click="joinGame(game.gameId)" class="round-corners">
-						Join
+						{{action}}
 					</button>
 				</td>
 			</tr>
-			<br>
 		</tbody>
 	</table>
 </div>
@@ -24,7 +23,8 @@
 export default {
 	name: "game-list",
 	props: {
-		games: Array
+		games: Array,
+		action: String
 	},
 	data() {
 		return {
@@ -41,6 +41,7 @@ export default {
 <style scoped>
 button {
 	margin: 0 0.5em 0 0;
+	width: 6em;
 }
 th {
 	text-align: center;

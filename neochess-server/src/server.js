@@ -68,6 +68,7 @@ let timers = {};
 let timesync = {};
 let currentGameId = {};
 let joinableGames = [];
+let watchableGames = [];
 let playerReceivedLastmove = {};
 let lastMoveFromGame = {};
 
@@ -115,13 +116,15 @@ const gameOver = async (gameId, player1, player2, resultData) => {
 			'result.description': resultData.result,
 			'result.winner': resultData.winner
 		});
-		/* Removes the game from array of joinable games */
+		/* Removes the game from array of joinable and watchable games */
 		joinableGames = joinableGames.filter(g => g.gameId.toString() != gameId);
+		watchableGames = watchableGames.filter(g => g.gameId.toString() != gameId);
 		/* Broadcasts the updated list of joinable games, filtered by username */
 		for (let u in sockets) {
 			const socketId = sockets[u];
 			io.to(socketId).emit('gamesList', {
-				games: joinableGames.filter(g => g.host !== u)
+				games: joinableGames.filter(g => g.host !== u),
+				watchableGames: watchableGames.filter(g => g.host !== u)
 			});
 		}
 		io.to(gameId).emit('updateGame', {game});
@@ -285,7 +288,8 @@ io.on('connection', (socket) => {
 
 			const username = users[socket.id];
 			socket.emit('gamesList', {
-				games: joinableGames.filter(g => g.host !== username)
+				games: joinableGames.filter(g => g.host !== username),
+				watchableGames: watchableGames.filter(g => g.host !== username)
 			});
 
 		} catch (error) {
@@ -395,11 +399,13 @@ io.on('connection', (socket) => {
 							});
 							/* Removes the game from array of joinable games */
 							joinableGames = joinableGames.filter(g => g.gameId.toString() != gameId);
+							watchableGames = watchableGames.filter(g => g.gameId.toString() != gameId);
 							/* Broadcasts the updated list of joinable games, filtered by username */
 							for (let u in sockets) {
 								const socketId = sockets[u];
 								io.to(socketId).emit('gamesList', {
-									games: joinableGames.filter(g => g.host !== u)
+									games: joinableGames.filter(g => g.host !== u),
+									watchableGames: watchableGames.filter(g => g.host !== u)
 								});
 							}
 							/* Terminates the game */
@@ -424,7 +430,8 @@ io.on('connection', (socket) => {
 			for (let u in sockets) {
 				const socketId = sockets[u];
 				io.to(socketId).emit('gamesList', {
-					games: joinableGames.filter(g => g.host !== u)
+					games: joinableGames.filter(g => g.host !== u),
+					watchableGames: watchableGames.filter(g => g.host !== u)
 				});
 			}
 
@@ -574,11 +581,19 @@ io.on('connection', (socket) => {
 			/* If game is joined, removes it from array of joinable games */
 			joinableGames = joinableGames.filter(g => g.gameId.toString() != gameId);
 
+			/* Set game as watchable */
+			watchableGames.push({
+				host: `${game.players.white.username} vs ${game.players.black.username}`,
+				timeControl: game.timeControl.string,
+				gameId: gameId},
+			);
+
 			/* Broadcasts the updated list of joinable games, filtered by username */
 			for (let u in sockets) {
 				const socketId = sockets[u];
 				io.to(socketId).emit('gamesList', {
-					games: joinableGames.filter(g => g.host !== u)
+					games: joinableGames.filter(g => g.host !== u),
+					watchableGames: watchableGames.filter(g => g.host !== u)
 				});
 			}
 

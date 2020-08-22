@@ -11,7 +11,8 @@
 			<div class="neochess-time round-corners">{{player1Time}}</div>
 		</div>
 		<div class="vertical-spacing-2"></div>
-		<div @click="resign" class="round-corners neochess-option">Resign</div>
+		<div v-if="!watcher"
+			@click="resign" class="round-corners neochess-option">Resign</div>
 		<!-- <div class="round-corners neochess-option">Offer draw</div> -->
 		<div class="vertical-spacing-2"></div>
 		<div :style="{visibility:disconnected_status,color:'red'}">
@@ -33,7 +34,8 @@
 					<div class="neochess-username">{{player1}}</div>
 				</b-col>
 				<b-col>
-					<div @click="resign" class="round-corners neochess-option">Resign</div>
+					<div v-if="!watcher" @click="resign"
+						class="round-corners neochess-option">Resign</div>
 					<!-- <div class="round-corners neochess-option">
 						Offer draw
 					</div> -->
@@ -94,6 +96,9 @@ export default {
 		},
 		disconnected_status() {
 			return this.connected ? 'hidden' : 'visible';
+		},
+		watcher() {
+			return this.$store.state.watcher;
 		}
 	},
 	methods: {
