@@ -38,7 +38,8 @@
 
 		<div class="vertical-spacing-3"></div>
 
-		<p class="neochess-title"> Join a game </p>
+		<p v-if="games.length > 0 || watchableGames.length > 0"
+			class="neochess-title"> Join a game </p>
 		<div class="vertical-spacing-1"/>
 
 		<div v-if="games.length > 0">
