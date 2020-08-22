@@ -308,16 +308,6 @@ io.on('connection', (socket) => {
 			const orientation = random < 0.5 ? 'white' : 'black';
 			const username = users[socket.id];
 
-			// let game = {
-			// 	whiteUsername: orientation === 'white' ? username : null,
-			// 	blackUsername: orientation === 'black' ? username : null,
-			// 	timeControl: data.timeControl,
-			// 	fen: null,
-			// 	lastMove: null,
-			// 	pgn: new chessjs.Chess().pgn(),
-			// 	started: false
-			// }
-
 			let game = {
 				host: username,
 				guest: null,
@@ -582,11 +572,16 @@ io.on('connection', (socket) => {
 			joinableGames = joinableGames.filter(g => g.gameId.toString() != gameId);
 
 			/* Set game as watchable */
-			watchableGames.push({
-				host: `${game.players.white.username} vs ${game.players.black.username}`,
-				timeControl: game.timeControl.string,
-				gameId: gameId},
-			);
+			const alreadyWatchable = watchableGames.find(g => g.gameId === gameId);
+			if (!alreadyWatchable) {
+				const white = game.players.white.username;
+				const black = game.players.black.username
+				watchableGames.push({
+					host: `${white} vs ${black}`,
+					timeControl: game.timeControl.string,
+					gameId: gameId},
+				);
+			}
 
 			/* Broadcasts the updated list of joinable games, filtered by username */
 			for (let u in sockets) {
