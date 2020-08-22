@@ -159,10 +159,10 @@ export default {
 		height: 1em;
 	}
 	.neochess-time {
-		font-size: normal;
+		font-size: large;
 	}
 	.neochess-username {
-		font-size: small;
+		font-size: large;
 	}
 	.neochess-option {
 		display: inherit;
@@ -174,6 +174,12 @@ export default {
 @media screen and (max-width: 575px) {
     .responsive-font {
 		font-size: x-small;
+	}
+	.neochess-time {
+		font-size: medium;
+	}
+	.neochess-username {
+		font-size: small;
 	}
 }
 </style>
