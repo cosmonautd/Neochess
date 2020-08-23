@@ -13,13 +13,11 @@
 		<div class="content">
 			<p>
 				I challenged myself to code a chess server in one week and this is the
-				result. The core was written in that week, but some improvements are 
+				result. The core was written in the first week, but some improvements are 
 				still being added. Neochess focuses on what really matters, the game itself.
-				There are no accounts and usernames are auto-generated. Only players can
-				access the game, but adding the possibility of watching games is
-				something I'm planning to do in the future. There may be bugs in the 
-				current implementation. If you find some, you can let me know by sending
-				an email to 
+				There are no accounts and usernames are auto-generated. There may be bugs 
+				in the current implementation. If you find some, you can let me know by 
+				sending an email to 
 				<a href="mailto:david@raiz.dev" class="bold link">david@raiz.dev</a>.
 			</p>
 			<div class="vertical-spacing-1"/>

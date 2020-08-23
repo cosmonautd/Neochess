@@ -16,8 +16,8 @@
 				currently you are connected as
 				<span class="bold">{{this.$store.state.username}}</span>.
 				You have the option to start a 
-				game or join an already existing one. When you start a game and enter 
-				the game room, you have two choices:
+				game or join an already existing one as player or a watcher.
+				When you start a game and enter the game room, you have two choices:
 			</p>
 			<div class="vertical-spacing-1"/>
 			<ol>
@@ -30,17 +30,16 @@
 				Since neochess is not yet well known, it may take forever for someone to
 				see and join your game. So, for now, it is recommended that you share the
 				url with a friend or invite him to neochess.
-				Created games will be available to join in the front page.
-				A warning: after someone joins your game, no one else will be able to use 
-				the url again, not even you or your opponent. If you close a game, that 
-				game will not be accessible anymore. Keep that in mind.
+				Available games will be shown in the front page.
+				A warning: if you close a game, you will not be able to join again as
+				a player. Keep that in mind.
 			</p>
 			<div class="vertical-spacing-1"/>
 			<p>
-				The timers start after black plays its first move. From there, only the
-				gods of chess know what will happen. You can move by clicking on the 
+				The timers start after black plays its first move. From there, not even 
+				the gods of chess know what will happen. You can move by clicking on the 
 				origin and destination squares or by just dragging and dropping pieces.
-				You can see past moves by pressing the arrow keys in you keyboard.
+				You can see past moves by pressing the arrow keys on you keyboard.
 			</p>
 			<div class="vertical-spacing-1"/>
 			<p>
