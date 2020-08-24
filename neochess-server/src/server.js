@@ -573,7 +573,7 @@ io.on('connection', (socket) => {
 
 			/* Set game as watchable */
 			const alreadyWatchable = watchableGames.find(g => g.gameId === gameId);
-			if (!alreadyWatchable) {
+			if (!alreadyWatchable && !game.state.finished) {
 				const white = game.players.white.username;
 				const black = game.players.black.username
 				watchableGames.push({
