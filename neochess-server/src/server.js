@@ -92,6 +92,10 @@ const seconds = {
 const gameOver = async (gameId, player1, player2, resultData) => {
 	/* Checks if game is not yet set as finished in the DB */
 	let game = await getGame(gameId);
+	const whiteUsername = game.players.white.username;
+	const blackUsername = game.players.black.username;
+	const tWhite = Math.max(0, timers[whiteUsername+gameId].time);
+	const tBlack = Math.max(0, timers[blackUsername+gameId].time);
 	if (!game.state.finished) {
 		/* Emits gameOver event to the game room */
 		io.to(gameId).emit('gameOver', resultData);
@@ -114,7 +118,9 @@ const gameOver = async (gameId, player1, player2, resultData) => {
 		game = await updateGame(gameId, {
 			'state.finished': true,
 			'result.description': resultData.result,
-			'result.winner': resultData.winner
+			'result.winner': resultData.winner,
+			'players.white.time': tWhite,
+			'players.black.time': tBlack
 		});
 		/* Removes the game from array of joinable and watchable games */
 		joinableGames = joinableGames.filter(g => g.gameId.toString() != gameId);
@@ -313,10 +319,12 @@ io.on('connection', (socket) => {
 				guest: null,
 				players: {
 					white: {
-						username: orientation === 'white' ? username : null
+						username: orientation === 'white' ? username : null,
+						time: seconds[data.timeControl]
 					},
 					black: {
-						username: orientation === 'black' ? username : null
+						username: orientation === 'black' ? username : null,
+						time: seconds[data.timeControl]
 					}
 				},
 				timeControl: {
@@ -594,7 +602,15 @@ io.on('connection', (socket) => {
 				/* Emits the last state of the timers */
 				const whiteUsername = game.players.white.username;
 				const blackUsername = game.players.black.username;
-				userTimeSync(username, whiteUsername, blackUsername);
+				let sync = {};
+				sync.gameId = gameId;
+				if ('time' in game.players.white)
+					sync[whiteUsername] = game.players.white.time;
+				else sync[whiteUsername] = seconds[data.timeControl];
+				if ('time' in game.players.black)
+					sync[blackUsername] = game.players.black.time;
+				else sync[blackUsername] = seconds[data.timeControl];
+				io.to(username+sockets[username]+gameId).emit('timesync', sync);
 			}
 
 			/* Broadcasts the updated list of joinable games, filtered by username */
