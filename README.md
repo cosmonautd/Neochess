@@ -1,7 +1,7 @@
 # Neochess
 ### The minimalistic chess server
 
-I challenged myself to code a chess server in one week and neochess is the result. The core was written in a week, but some improvements are still being added. Neochess focuses on what really matters, the game itself. There are no accounts and usernames are auto-generated. Only players can access the game, but adding the possibility of watching games is something I'm planning to do in the future.
+I challenged myself to code a chess server in one week and neochess is the result. The core was written in a week, but some improvements are still being added. Neochess focuses on what really matters, the game itself. There are no accounts and usernames are auto-generated.
 Check out a preview of [Neochess](https://davidborges.xyz/neochess) running at my website. There may be bugs in the current implementation. If you find some, you can let me know by opening an issue on this repository. I'll try to solve them as soon as I'm available.
 
 The website was built using [Vue.js](https://vuejs.org/), along with other free software tools. The server runs on [Node.js](https://nodejs.org/en/) and game data is stored at [MongoDB Cloud](https://www.mongodb.com/cloud). Real time synchronization between players is done with [Socket.IO](https://socket.io/).
