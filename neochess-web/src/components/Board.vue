@@ -183,11 +183,11 @@ export default {
 						this.historyBackwards();
 						break;
 					}
-					case 'ArrowUp': {
+					case 'ArrowDown': {
 						this.historyCurrent();
 						break;
 					}
-					case 'ArrowDown': {
+					case 'ArrowUp': {
 						this.historyBeginning();
 						break;
 					}
