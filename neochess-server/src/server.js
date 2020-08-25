@@ -606,10 +606,10 @@ io.on('connection', (socket) => {
 				sync.gameId = gameId;
 				if ('time' in game.players.white)
 					sync[whiteUsername] = game.players.white.time;
-				else sync[whiteUsername] = seconds[data.timeControl];
+				else sync[whiteUsername] = seconds[game.timeControl.string];
 				if ('time' in game.players.black)
 					sync[blackUsername] = game.players.black.time;
-				else sync[blackUsername] = seconds[data.timeControl];
+				else sync[blackUsername] = seconds[game.timeControl.string];
 				io.to(username+sockets[username]+gameId).emit('timesync', sync);
 			}
 
