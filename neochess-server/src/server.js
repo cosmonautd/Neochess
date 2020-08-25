@@ -583,6 +583,20 @@ io.on('connection', (socket) => {
 				);
 			}
 
+			/* If game was finished... */
+			if (game.state.finished) {
+				/* Emits gameOver event */
+				const resultData = {
+					result: game.result.description,
+					winner: game.result.winner
+				};
+				io.to(username+socket.id+gameId).emit('gameOver', resultData);
+				/* Emits the last state of the timers */
+				const whiteUsername = game.players.white.username;
+				const blackUsername = game.players.black.username;
+				userTimeSync(username, whiteUsername, blackUsername);
+			}
+
 			/* Broadcasts the updated list of joinable games, filtered by username */
 			for (let u in sockets) {
 				const socketId = sockets[u];
