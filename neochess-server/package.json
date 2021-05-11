@@ -15,7 +15,7 @@
     "express-validator": "^6.6.0",
     "http-errors": "~1.6.3",
     "jsonwebtoken": "^8.5.1",
-    "lodash": "^4.17.19",
+    "lodash": "^4.17.21",
     "mongodb": "^3.5.9",
     "morgan": "~1.9.1",
     "nodemon": "^2.0.4",
